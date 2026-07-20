@@ -333,3 +333,419 @@ Instructions:
     29   def hash_password(plain: str) -> str:
     30       return _pwd_context.hash(plain)
     31
+
+  Adapt the settings instantation to read variables in from a local credentials file if available
+
+● Read C:\dev\fake-cost-allocations\app\config.py
+● Read C:\dev\fake-cost-allocations
+● Read C:\dev\fake-cost-allocations\.gitignore
+
+  .env is already gitignored. I'll use a convention of credentials.env as the local credentials file — also needs to be gitignored. The pydantic-settings env_file field
+  accepts a list, so I can specify a priority chain: credentials.env overrides .env when both exist.
+● Write C:\dev\fake-cost-allocations\app\config.py
+     1   """
+     2   Application configuration.
+     3
+     4   Variable resolution order (highest → lowest priority):
+     5     1. Real environment variables (OS / shell exports)
+     6     2. credentials.env  — local secrets file, never committed
+     7     3. .env             — shared defaults, safe to commit
+     8     4. Field defaults below
+     9
+    10   The credentials file is intended for local developer overrides and CI/CD
+    11   secret injection.  It is gitignored so secrets are never accidentally
+    12   committed.  Copy .env.example to credentials.env to get started:
+    13
+    14       copy .env.example credentials.env   # Windows
+    15       cp  .env.example  credentials.env   # Unix
+    16   """
+    17
+    18   from pathlib import Path
+    19   from pydantic_settings import BaseSettings, SettingsConfigDict
+    20
+    21   _BASE_DIR = Path(__file__).resolve().parent.parent
+    22
+    23   # Build the env_file list; pydantic-settings applies files left-to-right,
+    24   # with later files taking lower priority.  We put credentials.env last so
+    25   # its values win (pydantic-settings merges in order, last writer wins for
+    26   # the same key — see note below).
+    27   #
+    28   # NOTE: pydantic-settings v2 env_file priority: the *last* file in the list
+    29   # has the *lowest* priority (values found earlier are kept).  To make
+    30   # credentials.env take precedence over .env we therefore list it *first*.
+    31   _env_files: list[Path] = []
+    32   _credentials = _BASE_DIR / "credentials.env"
+    33   _dotenv = _BASE_DIR / ".env"
+    34
+    35   if _credentials.exists():
+    36       _env_files.append(_credentials)   # highest file priority
+    37   if _dotenv.exists():
+    38       _env_files.append(_dotenv)        # fallback
+    39
+    40
+    41   class Settings(BaseSettings):
+    42       model_config = SettingsConfigDict(
+    43           env_file=_env_files or None,   # None → skip file loading entirely
+    44           env_file_encoding="utf-8",
+    45           extra="ignore",
+    46       )
+    47
+    48       # JWT
+    49       secret_key: str = "dev-secret-key-change-in-production"
+    50       algorithm: str = "HS256"
+    51       access_token_expire_minutes: int = 60
+    52
+    53       # App
+    54       app_env: str = "development"
+    55       app_title: str = "Cost Allocations API"
+    56       app_version: str = "0.1.0"
+    57
+    58
+    59   settings = Settings()
+
+  Now add credentials.env to .gitignore and create the example file:
+● Write C:\dev\fake-cost-allocations\.gitignore
+  added 4 lines, removed 1 line at L221 in C:\dev\fake-cost-allocations\.gitignore
+   221   # Byte-compiled / optimized / DLL files
+   222   __pycache__/
+   223   *.py[codz]
+   224   *$py.class
+   225
+   226   # C extensions
+   227   *.so
+   228
+   229   # Distribution / packaging
+   230   .Python
+   231   build/
+   232   develop-eggs/
+   233   dist/
+   234   downloads/
+   235   eggs/
+   236   .eggs/
+   237   lib/
+   238   lib64/
+   239   parts/
+   240   sdist/
+   241   var/
+   242   wheels/
+   243   share/python-wheels/
+   244   *.egg-info/
+   245   .installed.cfg
+   246   *.egg
+   247   MANIFEST
+   248
+   249   # PyInstaller
+   250   #   Usually these files are written by a python script from a template
+   251   #   before PyInstaller builds the exe, so as to inject date/other infos into it.
+   252   *.manifest
+   253   *.spec
+   254
+   255   # Installer logs
+   256   pip-log.txt
+   257   pip-delete-this-directory.txt
+   258
+   259   # Unit test / coverage reports
+   260   htmlcov/
+   261   .tox/
+   262   .nox/
+   263   .coverage
+   264   .coverage.*
+   265   .cache
+   266   nosetests.xml
+   267   coverage.xml
+   268   *.cover
+   269   *.py.cover
+   270   *.lcov
+   271   .hypothesis/
+   272   .pytest_cache/
+   273   cover/
+   274
+   275   # Translations
+   276   *.mo
+   277   *.pot
+   278
+   279   # Django stuff:
+   280   *.log
+   281   local_settings.py
+   282   db.sqlite3
+   283   db.sqlite3-journal
+   284
+   285   # Flask stuff:
+   286   instance/
+   287   .webassets-cache
+   288
+   289   # Scrapy stuff:
+   290   .scrapy
+   291
+   292   # Sphinx documentation
+   293   docs/_build/
+   294
+   295   # PyBuilder
+   296   .pybuilder/
+   297   target/
+   298
+   299   # Jupyter Notebook
+   300   .ipynb_checkpoints
+   301
+   302   # IPython
+   303   profile_default/
+   304   ipython_config.py
+   305
+   306   # pyenv
+   307   #   For a library or package, you might want to ignore these files since the code is
+   308   #   intended to run in multiple environments; otherwise, check them in:
+   309   # .python-version
+   310
+   311   # pipenv
+   312   #   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+   313   #   However, in case of collaboration, if having platform-specific dependencies or dependencies
+   314   #   having no cross-platform support, pipenv may install dependencies that don't work, or not
+   315   #   install all needed dependencies.
+   316   # Pipfile.lock
+   317
+   318   # UV
+   319   #   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
+   320   #   This is especially recommended for binary packages to ensure reproducibility, and is more
+   321   #   commonly ignored for libraries.
+   322   # uv.lock
+   323
+   324   # poetry
+   325   #   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
+   326   #   This is especially recommended for binary packages to ensure reproducibility, and is more
+   327   #   commonly ignored for libraries.
+   328   #   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
+   329   # poetry.lock
+   330   # poetry.toml
+   331
+   332   # pdm
+   333   #   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
+   334   #   pdm recommends including project-wide configuration in pdm.toml, but excluding .pdm-python.
+   335   #   https://pdm-project.org/en/latest/usage/project/#working-with-version-control
+   336   # pdm.lock
+   337   # pdm.toml
+   338   .pdm-python
+   339   .pdm-build/
+   340
+   341   # pixi
+   342   #   Similar to Pipfile.lock, it is generally recommended to include pixi.lock in version control.
+   343   # pixi.lock
+   344   #   Pixi creates a virtual environment in the .pixi directory, just like venv module creates one
+   345   #   in the .venv directory. It is recommended not to include this directory in version control.
+   346   .pixi/*
+   347   !.pixi/config.toml
+   348
+   349   # PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+   350   __pypackages__/
+   351
+   352   # Celery stuff
+   353   celerybeat-schedule*
+   354   celerybeat.pid
+   355
+   356   # Redis
+   357   *.rdb
+   358   *.aof
+   359   *.pid
+   360
+   361   # RabbitMQ
+   362   mnesia/
+   363   rabbitmq/
+   364   rabbitmq-data/
+   365
+   366   # ActiveMQ
+   367   activemq-data/
+   368
+   369   # SageMath parsed files
+   370   *.sage.py
+   371
+   372   # Environments
+   373   .env
+   374   .envrc
+   375   .venv
+   376   env/
+   377   venv/
+   378   ENV/
+   379   env.bak/
+   380   venv.bak/
+   381
+   382   # Spyder project settings
+   383   .spyderproject
+   384   .spyproject
+   385
+   386   # Rope project settings
+   387   .ropeproject
+   388
+   389   # mkdocs documentation
+   390   /site
+   391
+   392   # mypy
+   393   .mypy_cache/
+   394   .dmypy.json
+   395   dmypy.json
+   396
+   397   # Pyre type checker
+   398   .pyre/
+   399
+   400   # pytype static type analyzer
+   401   .pytype/
+   402
+   403   # Cython debug symbols
+   404   cython_debug/
+   405
+   406   # PyCharm
+   407   #   JetBrains specific template is maintained in a separate JetBrains.gitignore that can
+   408   #   be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
+   409   #   and can be added to the global gitignore or merged into this file.  For a more nuclear
+   410   #   option (not recommended) you can uncomment the following to ignore the entire idea folder.
+   411   # .idea/
+   412
+   413   # Abstra
+   414   #   Abstra is an AI-powered process automation framework.
+   415   #   Ignore directories containing user credentials, local state, and settings.
+   416   #   Learn more at https://abstra.io/docs
+   417   .abstra/
+   418
+   419   # Visual Studio Code
+   420   #   Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore
+   421   #   that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
+   422   #   and can be added to the global gitignore or merged into this file. However, if you prefer,
+   423   #   you could uncomment the following to ignore the entire vscode folder
+   424   # .vscode/
+   425   # Temporary file for partial code execution
+   426   tempCodeRunnerFile.py
+   427
+   428   # Ruff stuff:
+   429   .ruff_cache/
+   430
+   431   # PyPI configuration file
+   432   .pypirc
+   433
+   434   # Marimo
+   435   marimo/_static/
+   436   marimo/_lsp/
+   437   __marimo__/
+   438
+   439   # Streamlit
+   440-  .streamlit/secrets.toml
+   440+  .streamlit/secrets.toml
+   441+
+   442+  # Local credentials file — never commit real secrets
+   443+  credentials.env
+
+  Update .env.example to explain the two-file setup:
+● Write C:\dev\fake-cost-allocations\.env.example
+     1   # ---------------------------------------------------------------------------
+     2   # Cost Allocations API — environment variable reference
+     3   # ---------------------------------------------------------------------------
+     4   # Two files are supported:
+     5   #
+     6   #   .env             — shared defaults, safe to commit (no real secrets here)
+     7   #   credentials.env  — local overrides with real secrets, NEVER commit this
+     8   #
+     9   # To get started locally:
+    10   #   copy .env.example credentials.env   (Windows)
+    11   #   cp   .env.example credentials.env   (Unix/macOS)
+    12   #
+    13   # Then edit credentials.env with your actual values.
+    14   # Resolution order: env vars > credentials.env > .env > code defaults
+    15   # ---------------------------------------------------------------------------
+    16
+    17   # Required in production — generate with: python -c "import secrets; print(secrets.token_hex(32))"
+    18   SECRET_KEY=change-me-in-production-use-a-long-random-string
+    19
+    20   ALGORITHM=HS256
+    21   ACCESS_TOKEN_EXPIRE_MINUTES=60
+    22
+    23   # "development" | "staging" | "production"
+    24   APP_ENV=development
+
+  Verify the app still starts cleanly with the updated config:
+● Shell cd C:\dev\fake-cost-allocations; python -c "
+  from app.config import settings, _env_files, _credentials, _dotenv
+  print('credentials.env exists:', _credentials.exists())
+  print('  .env exists:          ', _dotenv.exists())
+  print('env_files loaded:       ', [str(f) for f in _env_files])
+  print('app_env:                ', settings.app_env)
+  print('secret_key is default:  ', settings.secret_key == 'dev-secret-key-change-in-production')
+  print('Config OK')
+  "
+● Shell cd C:\dev\fake-cost-allocations; `
+    "SECRET_KEY=from-dotenv`nAPP_ENV=staging" | Set-Content .env; `
+    "SECRET_KEY=from-credentials`nAPP_ENV=production" | Set-Content credentials.env; `
+    python -c "
+  from app.config import settings, _env_files
+  print('env_files:', [str(f) for f in _env_files])
+  print('secret_key:', settings.secret_key)
+  print('app_env:   ', settings.app_env)
+  assert settings.secret_key == 'from-credentials', 'credentials.env should win'
+  assert settings.app_env == 'production', 'credentials.env should win'
+  print('Priority check PASSED')
+  "; `
+    Remove-Item .env, credentials.env
+
+  The priority is reversed — pydantic-settings v2 gives priority to the first file in the list, not the last. I had the comment backwards. Let me fix the order and the
+  comment:
+● Write C:\dev\fake-cost-allocations\app\config.py
+  added 6 lines, removed 6 lines at L28 in C:\dev\fake-cost-allocations\app\config.py
+    28-  # NOTE: pydantic-settings v2 env_file priority: the *last* file in the list
+    29-  # has the *lowest* priority (values found earlier are kept).  To make
+    30-  # credentials.env take precedence over .env we therefore list it *first*.
+    28+  # NOTE: pydantic-settings v2 env_file priority: the *first* file in the list
+    29+  # has the *lowest* priority; later files override earlier ones.  To make
+    30+  # credentials.env take precedence over .env we list .env first.
+    31   _env_files: list[Path] = []
+    32   _credentials = _BASE_DIR / "credentials.env"
+    33   _dotenv = _BASE_DIR / ".env"
+    34
+    35-  if _credentials.exists():
+    36-      _env_files.append(_credentials)   # highest file priority
+    37   if _dotenv.exists():
+    38-      _env_files.append(_dotenv)        # fallback
+    36+      _env_files.append(_dotenv)        # base defaults (lower priority)
+    37+  if _credentials.exists():
+    38+      _env_files.append(_credentials)   # local secrets (higher priority)
+
+  Also fix the module docstring to be accurate:
+● Write C:\dev\fake-cost-allocations\app\config.py
+  added 1 line, removed 1 line at L4 in C:\dev\fake-cost-allocations\app\config.py
+     4   Variable resolution order (highest → lowest priority):
+     5     1. Real environment variables (OS / shell exports)
+     6-    2. credentials.env  — local secrets file, never committed
+     6+    2. credentials.env  — local secrets file, never committed  ← wins over .env
+     7     3. .env             — shared defaults, safe to commit
+     8     4. Field defaults below
+
+  Now re-run the priority test:
+● Shell cd C:\dev\fake-cost-allocations; `
+    "SECRET_KEY=from-dotenv`nAPP_ENV=staging" | Set-Content .env; `
+    "SECRET_KEY=from-credentials`nAPP_ENV=production" | Set-Content credentials.env; `
+    python -c "
+  from app.config import settings, _env_files
+  print('env_files:', [str(f) for f in _env_files])
+  print('secret_key:', settings.secret_key)
+  print('app_env:   ', settings.app_env)
+  assert settings.secret_key == 'from-credentials', 'credentials.env should win'
+  assert settings.app_env == 'production', 'credentials.env should win'
+  print('Priority check PASSED')
+  "; `
+    Remove-Item .env, credentials.env
+
+  Priority is correct. Here's the final state of config.py:
+● Read C:\dev\fake-cost-allocations\app\config.py
+
+  Done. Here's what changed across the three files:
+
+  app/config.py — the main change. Before starting the app, it walks up to the project root and looks for both .env and credentials.env. Both are optional. When both exist,
+  credentials.env wins on any key collision. Real OS environment variables still override everything.
+
+  .env.example — updated to explain the two-file pattern and how to bootstrap locally.
+
+  .gitignore — credentials.env added so it can never be accidentally committed.
+
+  The priority chain is:
+
+  OS env vars  >  credentials.env  >  .env  >  code defaults
+
+  One practical note: pydantic-settings v2 has an unintuitive list ordering — the last file in env_file has the highest priority (it overwrites earlier ones). The code
+  accounts for this by putting .env first and credentials.env second.
+
+▸ Credits: 2.44 • Time: 1m 42s
