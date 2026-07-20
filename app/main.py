@@ -17,6 +17,8 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from uvicorn import run
+
 from app.config import settings
 from app.routers import (
     actual,
@@ -28,7 +30,7 @@ from app.routers import (
     step3_labels,
     step4_review,
 )
-from app import seed  # runs seed data on import
+from app import seed  # runs seed data on import  # noqa: F401
 
 
 # ---------------------------------------------------------------------------
@@ -144,3 +146,10 @@ def health():
             "activities": len(db.activities),
         },
     }
+
+if __name__ == '__main__':
+    run(
+        'main:app',
+        port=80,
+        reload=True,
+    )
