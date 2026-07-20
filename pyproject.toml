@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cost-allocations"
+version = "0.1.0"
+description = "Cost Allocations API - track and distribute financial costs across business Cost Centres"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.139.2",
+    "uvicorn[standard]==0.34.3",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.9.1",
+    "python-jose[cryptography]==3.3.0",
+    "bcrypt==4.3.0",
+    "python-multipart==0.0.20",
+    "httpx==0.28.1",
+    "email-validator==2.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.4.1",
+    "pytest-asyncio==0.26.0",
+    "httpx==0.28.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
