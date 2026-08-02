@@ -1,0 +1,22 @@
+info:
+  name: POST  /token
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{url}}/auth/token"
+  body:
+    type: json
+    data: |-
+      {
+        "username": "veitcrb",
+        "password": "password1"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

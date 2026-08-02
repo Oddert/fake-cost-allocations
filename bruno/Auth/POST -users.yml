@@ -1,0 +1,23 @@
+info:
+  name: POST /users
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{url}}/auth/users"
+  body:
+    type: json
+    data: |
+      {
+        "username": "veitcrb",
+        "email": "veitcrb@m01rbs.co.uk",
+        "password": "password1"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

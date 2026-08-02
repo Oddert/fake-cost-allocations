@@ -1,0 +1,19 @@
+info:
+  name: PATCH /users/:userId/deactivate
+  type: http
+  seq: 5
+
+http:
+  method: PATCH
+  url: "{{url}}/auth/users/:userId/deactivate"
+  params:
+    - name: userId
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
