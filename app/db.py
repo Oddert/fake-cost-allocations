@@ -11,7 +11,7 @@ Oracle design notes:
 """
 
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from decimal import Decimal
 from threading import Lock
 from typing import Any
@@ -59,7 +59,9 @@ seq_submissions     = _Sequence()   # step-4 submissions
 # role          VARCHAR2(20)    NOT NULL  CHECK (role IN ('admin','analyst','viewer'))
 # is_active     NUMBER(1)       NOT NULL  DEFAULT 1
 # created_at    TIMESTAMP WITH TIME ZONE
-users: dict[int, dict[str, Any]] = {}
+users: dict[int, dict[str, Any]] = {
+    4: {'user_id': 4, 'username': 'veitcrb', 'email': 'veitcrb@m01rbs.co.uk', 'hashed_pwd': '$2b$12$T6un2tm9Mdcokl967IQrU.OXrz.JaAzvDIDwLHrVL/BqKtoQY2zl.', 'role': 'viewer', 'is_active': True, 'created_at': datetime(2026, 8, 2, 11, 10, 52, 355352, tzinfo=UTC)}
+}
 
 # CA_COST_CENTRES
 # cost_centre_id   NUMBER        PK
