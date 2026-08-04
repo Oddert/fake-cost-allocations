@@ -113,6 +113,7 @@ Feature: Protected Endpoints
 Feature: login
     Scenario: Successful login with valid credentials
         Given a user exists
+        And the user is not deactivated
         When the user logs in with valid credentials
         Then they should receive an access token
 
@@ -123,6 +124,7 @@ Feature: login
 Feature: List users
     Scenario: Non-admin requests are rejected
         Given the user is logged in
+        And the user is not deactivated
         And the user does not have the "admin" role
         When the user requests a list of users
         Then the request is rejected with a 403 unprivileged status
@@ -142,6 +144,7 @@ Feature: List users
 Feature: Create user
     Background:
         Given a user exists in the database
+        And the user is not deactivated
         And the requesting user is logged in as this user
         And the user's token is valid
 
@@ -206,15 +209,47 @@ Feature: Create user
             |user5|<user5@exmaple.com>|s*@pl3|
 
 Feature: get user details
-    Scenario: returns the current user profile only
+    Scenario: A user requests their own profile details
+        Given a user is logged in
+        When the user requests the endpoint
+        Then they get their full user profile
 
-Feature: deactivate user
+Feature: Deactivating a user
+    Background:
+        Given one admin user exists
+        And the admin user is not deactivated
+        And another user exists
+        And the other user is not deactivated
+
     Scenario: rejects non-admin requests
-    Scenario: returns confirmation of a deactivated user
-    Scenario: user can no longer login after deactivation
+        Given the user is logged in
+        And the user does not have the "admin" role
+        When the user attempts to deactivate another user
+        Then the request is rejected
+
+    Scenario: user cannot deactivate themselves
+        Given the user is logged in
+        And the user has the "admin" role
+        When the user attempt to deactivate their own account
+        Then the request is rejected
+
+    Scenario: An admin deactivates a user
+        Given the user is logged in
+        And the user has the "admin" role
+        WHen the user attempts to deactivate another user
+        Then the user is deactivated
+        And the details of the deactivated user are returned
+        And the deactivated user details can no longer login
 
 Feature: change password
-    Scenario: user can change their own password if they supply the old one
+    Background:
+        Given a user exists in the database
+        And the user is not deactivated
+        And the current user is logged in
+
+    Scenario: User changes their password
+        Given 
+    user can change their own password if they supply the old one
     Scenario: old password can no longer be used
 
 Feature: create new cost centre
