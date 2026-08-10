@@ -1,5 +1,16 @@
 # Test Cases
 
+Feature: Code quality and conformity
+    TODO
+Feature: SOX compliance
+    TODO
+Feature: ISO/IEC27001 Compliance
+    TODO
+Feature: GDPR Compliance
+    TODO
+Feature: OpenAPI linting conformity
+    TODO
+
 Feature: Protected Endpoints
     Scenario: Unauthenticated user tries to access a protected endpoint
         Given: the user is not logged in
@@ -23,6 +34,11 @@ Feature: login
         When a user logs in with incorrect details
         Then the request is rejected
 
+    Scenario: Successful login as an existing user — deactivation blocks login
+        Given a user is deactivated
+        When the user tries to log in
+        Then the request is rejected
+
 Feature: List users
     Scenario: Non-admin requests are rejected
         Given the user is logged in
@@ -43,7 +59,7 @@ Feature: List users
         When the user requests a list of users
         Then the list is returned without any sensitive information
 
-Feature: Create user
+Feature: Create new user
     Background:
         Given a user exists in the database
         And the user is not deactivated
@@ -56,10 +72,11 @@ Feature: Create user
         When the user makes a request missing one or more details
         Then the request is rejected
         Examples:
-            |username|email|password|
-            |user123| |password|
-            | |<user123@gmail.com>|password|
-            |user123|<user123@gmail.com>| |
+            |username|email|password|role|
+            |user123| |password|viewer|
+            | |<user123@gmail.com>|password|viewer|
+            |user123|<user123@gmail.com>| |viewer|
+            |user123|<user123@gmail.com>|password||
 
     Scenario: Sign-ups with invalid emails are rejected
         Given the user is logged in
@@ -67,11 +84,11 @@ Feature: Create user
         When the user tries to register another user with a malformed email
         Then the request is rejected
         Examples:
-            |username|email|password|
-            |user123| |password|
-            |user123|bademail|password|
-            |user123|email@example@com|password|
-            |user123|email.example|password|
+            |username|email|password|role|
+            |user123| |password|viewer|
+            |user123|bademail|password|viewer|
+            |user123|email@example@com|password|viewer|
+            |user123|email.example|password|viewer|
 
     Scenario: Non-admins cannot register a new user
         Given the user is logged in
@@ -102,19 +119,24 @@ Feature: Create user
         And the password is not sufficiently complex
         Then the request is rejected
         Examples:
-            |username|email|password|
-            |user1|<user1@exmaple.com>|password|
-            |user2|<user2@exmaple.com>|p|
-            |user3|<user3@exmaple.com>|123|
-            |user4|<user4@exmaple.com>|battery-123|
-            |user5|<user5@exmaple.com>|horse£|
-            |user5|<user5@exmaple.com>|s*@pl3|
+            |username|email|password|role|
+            |user1|<user1@exmaple.com>|password|viewer|
+            |user2|<user2@exmaple.com>|p|viewer|
+            |user3|<user3@exmaple.com>|123|viewer|
+            |user4|<user4@exmaple.com>|battery-123|viewer|
+            |user5|<user5@exmaple.com>|horse£|viewer|
+            |user5|<user5@exmaple.com>|s*@pl3|viewer|
 
 Feature: get user details
     Scenario: A user requests their own profile details
         Given a user is logged in
         When the user requests the endpoint
         Then they get their full user profile
+
+    Scenario: No sensitive details are returned
+        Given a user is logged in
+        When the user requests the endpoint
+        Then they do not receive any private data (e.g. password)
 
 Feature: Deactivating a user
     Background:
@@ -166,7 +188,7 @@ Feature: Creating a new cost centre
         And the requesting user is logged in
         And at least one other cost centre exists in the database
 
-    Scenario: Admin users can create a new cost center
+    Scenario: Admin users can create a new cost centre
         Given the current user has the "admin" role
         When the user submits new cost centre details
         Then the new cost centre is created
@@ -183,14 +205,26 @@ Feature: Creating a new cost centre
         When the user submits new cost centre details with a code already belonging to an existing cost centre
         Then the request is rejected as a conflict
 
+    Scenario: Long Cost Centre codes are not allowed
+        Given the current user has the "admin" role
+        When the user submits new cost centre details with a code longer than 20 characters
+        Then the request is rejected as a unprocessable
+
 Feature: Get a list of all cost centres
-    Scenario: returns a list of all held cost centres
+    Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
-        And the user holds the "admin" role
         And at least one other cost centre exists in the database
+
+    Scenario: returns a list of all held cost centres
         When the user requests cost centres
         Then a list of all cost centres is returned
+
+    Scenario: Returns only active cost centres with the flag set
+        Given a mixture of 'active' and 'inactive' cost centres exist in the database
+        When the user requests cost centres with the 'active' flag set
+        Then a list of cost centres is returned
+        And they are all active
 
 Feature: Get single cost centre by id
     Background:
@@ -203,10 +237,10 @@ Feature: Get single cost centre by id
         When the user requests a cost centre by ID
         Then the cost centre details are returned
 
-    Scenario: Get a cost-centre by ID without a correct role
-        Given the user does not hold the "admin" role
-        When the user requests a cost-centre by ID
-        Then the request is rejected as unprivileged
+    Scenario: Query a missing cost centre
+        Given the user holds the "admin" role
+        When the user requests a cost-centre by an ID which does not exist
+        Then the request is rejected with a 'not found' response.
 
     Scenario: Get a cost centre with an invalid ID
         Given the user holds the "admin" role
@@ -223,7 +257,7 @@ Feature: Update a cost centre
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
-        And at least other cost centre exists in the database
+        And at least one other cost centre exists in the database
 
     Scenario: An admin updates a cost centre's details
         Given the user holds the "admin" role
@@ -233,7 +267,7 @@ Feature: Update a cost centre
 
     Scenario: An invalid ID is used in an update
         Given the user holds the "admin" role
-        When the user submits cost centre details to an invalid ID
+        When the user submits cost centre details to an invalid cost centre ID
         Then the request is rejected
         Examples:
             |ID|
@@ -247,13 +281,18 @@ Feature: Update a cost centre
         When the user submits cost centre details
         Then the request is rejected with an unprivileged error
 
+    Scenario: A cost centre code cannot be changed
+        Given the user does not hold the "admin" role
+        When the user submits cost centre details including a code
+        Then the request is rejected as unprocessable
+
 Feature: Creating a new legal entity
     Background:
         Given a user exists in the database
         And the requesting user is logged in
         And at least one other legal entity exists in the database
 
-    Scenario: Admin users can create a new cost center
+    Scenario: Admin users can create a new legal entity
         Given the current user has the "admin" role
         When the user submits new legal entity details
         Then the new legal entity is created
@@ -275,11 +314,11 @@ Feature: Get a list of all legal entities
         Given a user exists in the database
         And the requesting user is logged in as this user
         And the user holds the "admin" role
-        And at least one other cost centre exists in the database
+        And at least one legal entity exists in the database
         When the user requests legal entities
         Then a list of all legal entities is returned
 
-Feature: Get single legal entity by id
+Feature: Get single legal entity by ID
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -312,9 +351,9 @@ Feature: Update a legal entity
         Then the legal entity is updated
         And the updated legal entity is returned
 
-    Scenario: rejects invalid IDs
+    Scenario: An invalid ID is used in an update
         Given the user holds the "admin" role
-        When the user submits legal entity details to an invalid ID
+        When the user submits legal entity details to an invalid legal entity ID
         Then the request is rejected
         Examples:
             |ID|
@@ -329,56 +368,81 @@ Feature: Creating a new allocation period
         And the requesting user is logged in
         And at least one other allocation period exists in the database
 
-    Scenario: Admin users can create a new cost center
-        Given the current user has the "admin" role
-        Or the current user has the "analyst" role
+    Scenario: Privileged users can create a new allocation period
+        Given the user holds a valid role "<role>"
         When the user submits new allocation period details
         Then the new allocation period is created
         And the details of the new allocation period are returned
         And the new allocation period appears in the full list of allocation periods
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
-    Scenario: Non-admins cannot create a allocation period
+    Scenario: Non-analysts cannot create an allocation period
         Given the user does not hold the "admin" role
         And the user does not hold the "analyst" role
         When the user submits new allocation period details
         Then the request is rejected with an unprivileged message
 
-    Scenario: Duplicate allocation period codes are rejected
-        Given the current user has the "admin" role
-        Or the current user has the "analyst" role
-        When the user submits new allocation period details with a code already belonging to an existing allocation period
+    Scenario: Duplicate allocation period names are rejected
+        Given the user holds a valid role "<role>"
+        When the user submits new allocation period details with a name already belonging to an existing allocation period in the same fiscal year
         Then the request is rejected as a conflict
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
 Feature: Get a list of all allocation periods
-    Scenario: returns a list of all held allocation periods
-        Given a user exists in the database
-        And the requesting user is logged in as this user
-        And the user holds the "admin" role
-        Or the current user has the "analyst" role
-        And at least one other allocation period exists in the database
-        When the user requests allocation periods
-        Then a list of all allocation periods is returned
-
-Feature: Get single allocation period by id
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
         And at least one allocation period exists in the database
 
-    Scenario: Get a allocation period by ID
-        Given the user holds the "admin" role
-        Or the current user has the "analyst" role
-        When the user requests a allocation period by ID
+    Scenario: Get a list of all held allocation periods
+        When the user requests allocation periods
+        Then a list of all allocation periods is returned
+
+    Scenario: Get a list of only specific modes
+        Given at least one allocation in the database as the requested mode
+        And at least one allocation in the database as a different mode
+        When the user requests allocation periods with a specific mode
+        Then a list of all allocation periods is returned
+        And all the allocations have the same mode value
+
+    Scenario: Get a list of only specific status
+        Given at least one allocation in the database as the requested status
+        And at least one allocation in the database as a different status
+        When the user requests allocation periods with a specific status
+        Then a list of all allocation periods is returned
+        And all the allocations have the same status value
+
+    Scenario: Get a list of only specific fiscal year
+        Given at least one allocation in the database as the requested fiscal year
+        And at least one allocation in the database as a different fiscal year
+        When the user requests allocation periods with a specific fiscal year
+        Then a list of all allocation periods is returned
+        And all the allocations have the same fiscal year value
+
+    Scenario: Get a list of periods with multiple filters
+        Given a mixture of allocations exist in the database with varying mode, status, and fiscal year values
+        When the user requests allocation periods with a specific fiscal year, mode and status
+        Then a list of all allocation periods is returned
+        And all the allocations have the same fiscal year, mode and status values
+
+Feature: Get single allocation period by ID
+    Background:
+        Given a user exists in the database
+        And the requesting user is logged in as this user
+        And at least one allocation period exists in the database
+
+    Scenario: Get an allocation period by ID
+        When the user requests an allocation period by ID
         Then the allocation period details are returned
 
-    Scenario: Get a allocation period by ID without a correct role
-        Given the user does not hold the "admin" role
-        And the current user does not hold the "analyst" role
-        When the user requests a allocation period by ID
-        Then the request is rejected as unprivileged
-
-    Scenario: Get a allocation period with an invalid ID
-        When the user requests a allocation period with an invalid ID
+    Scenario: Get an allocation period with an invalid ID
+        When the user requests an allocation period with an invalid ID
         Then the request is rejected
         Examples:
             |ID|
@@ -387,22 +451,24 @@ Feature: Get single allocation period by id
             |'hello'|
             |'{}'|
 
-Feature: Update a cost centre
+Feature: Update an allocation period
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
-        And at least one other cost centre exists in the database
+        And at least one other allocation period exists in the database
 
-    Scenario: An admin updates a allocation period's details
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+    Scenario: A privileged user updates an allocation period's details
+        Given the user holds a valid role "<role>"
         When the user submits allocation period details
         Then the allocation period is updated
         And the updated allocation period is returned
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
     Scenario: An invalid ID is used in an update
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
         When the user submits allocation period details to an invalid ID
         Then the request is rejected
         Examples:
@@ -413,26 +479,27 @@ Feature: Update a cost centre
             |'{}'|
 
     Scenario: An unprivileged user updates a period
-        Given the user does not hold the "admin" role
-        Or the user holds the "analyst" role
+        Given the user holds the "viewer" role
         When the user submits allocation period details
         Then the request is rejected with an unprivileged error
 
     Scenario: Request to update a locked period
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+        Given the user holds a valid role "<role>"
         And a locked allocation period exists in the database
         When the user submits allocation period details for the locked period
         Then the request is rejected
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
 Feature: lock a period
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
 
-    Scenario: A privileged user an allocation period
+    Scenario: An admin locks an allocation period
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
         And an unlocked allocation period exists in the database
         When the user submits a request to an allocation period ID
         Then the allocation period is locked
@@ -441,31 +508,28 @@ Feature: lock a period
 
     Scenario: An unprivileged user locks an allocation period
         Given the user does not hold the "admin" role
-        And the user does not hold the "analyst" role
         And an unlocked allocation period exists in the database
         When the user submits a request to an allocation period ID
         Then the request is rejected as unprivileged
 
     Scenario: An invalid ID is used to lock a period
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
         And an unlocked allocation period exists in the database
         When the user submits a request using an invalid allocation period ID
-        Then the request is rejected as unprivileged
-        Examples: 
+        Then the request is rejected
+        Examples:
             |ID|
             | |
             |null|
             |'hello'|
             |'{}'|
 
-    Scenario: An unprivileged user locks an allocation period which is already locked
-        Given the user does not hold the "admin" role
-        And the user does not hold the "analyst" role
-        And an unlocked allocation period exists in the database
-        And that allocation period is locked
-        When the user submits a request to an allocation period ID
-        Then allocation period is returned
+    Scenario: An admin locks an allocation period which is already locked
+        Given the user holds the "admin" role
+        And an allocation period exists in the database
+        And that allocation period is already locked
+        When the user submits a request to that allocation period ID
+        Then the allocation period is returned
         And the user is notified that no action was taken
 
 Feature: Create an expense
@@ -474,24 +538,25 @@ Feature: Create an expense
         And the requesting user is logged in as this user
         And at least one allocation period exists in the database
 
-    Scenario: A privileged user creates an allocation period
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+    Scenario: A privileged user creates an expense
+        Given the user holds a valid role "<role>"
         And an unlocked allocation period exists in the database
         When the user submits a request to create an expense on an allocation period
         Then the expense is created
         And the expense is returned
         And the expense shows in the list of all expenses
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
     Scenario: An unprivileged user creates an expense
-        Given the user does not hold the "admin" role
-        And the user does not hold the "analyst" role
+        Given the user holds the "viewer" role
         When the user submits a request to create an expense
         Then the request is rejected as unprivileged
 
     Scenario: A request to an invalid allocation period ID is made
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
         When the user submits a request to create an expense on an invalid allocation period ID
         Then the request is rejected
         Examples:
@@ -502,12 +567,15 @@ Feature: Create an expense
             |'{}'|
 
     Scenario: A request to a locked allocation period is made
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+        Given the user holds a valid role "<role>"
         And a locked allocation period exists in the database
         When the user submits a request to create an expense on the locked period
         Then the request is rejected
         And an explanation is given
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
 Feature: get all expenses
     Background:
@@ -568,23 +636,24 @@ Feature: Update an expense
         And at least one allocation period exists in the database
         And at least one expense exists assigned to an allocation period
 
-    Scenario: A privileged user updates an allocation period
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+    Scenario: A privileged user updates an expense
+        Given the user holds a valid role "<role>"
         And an unlocked allocation period exists in the database
         When the user submits a request to update an expense on an allocation period
         Then the expense is updated
         And the expense is returned
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
     Scenario: An unprivileged user updates an expense
-        Given the user does not hold the "admin" role
-        And the user does not hold the "analyst" role
+        Given the user holds the "viewer" role
         When the user submits a request to update an expense
         Then the request is rejected as unprivileged
 
     Scenario: A request to an invalid allocation period ID is made
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
         When the user submits a request to update an expense on an invalid allocation period ID
         Then the request is rejected
         Examples:
@@ -594,10 +663,9 @@ Feature: Update an expense
             |'hello'|
             |'{}'|
 
-    Scenario: A request to an invalid allocation expense ID is made
+    Scenario: A request to an invalid expense ID is made
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
-        When the user submits a request to update an expense on an invalid allocation expense ID
+        When the user submits a request to update an expense on an invalid expense ID
         Then the request is rejected
         Examples:
             |ID|
@@ -607,12 +675,15 @@ Feature: Update an expense
             |'{}'|
 
     Scenario: A request to a locked allocation period is made
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+        Given the user holds a valid role "<role>"
         And a locked allocation period exists in the database
-        When the user submits a request to create an expense on the locked period
+        When the user submits a request to update an expense on the locked period
         Then the request is rejected
         And an explanation is given
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
 Feature: Delete an expense
     Background:
@@ -621,25 +692,25 @@ Feature: Delete an expense
         And at least one allocation period exists in the database
         And at least one expense exists assigned to an allocation period
 
-    Scenario: A privileged user deletes an allocation period
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+    Scenario: A privileged user deletes an expense
+        Given the user holds a valid role "<role>"
         And an unlocked allocation period exists in the database
-        When the user submits a request to update an expense on an allocation period
+        When the user submits a request to delete an expense on an allocation period
         Then the expense is deleted
-        And the expense is returned
         And the expense does not appear in the full list of expenses
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
     Scenario: An unprivileged user deletes an expense
-        Given the user does not hold the "admin" role
-        And the user does not hold the "analyst" role
-        When the user submits a request to update an expense
+        Given the user holds the "viewer" role
+        When the user submits a request to delete an expense
         Then the request is rejected as unprivileged
 
     Scenario: A request to an invalid allocation period ID is made
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
-        When the user submits a request to update an expense on an invalid allocation period ID
+        When the user submits a request to delete an expense on an invalid allocation period ID
         Then the request is rejected
         Examples:
             |ID|
@@ -648,10 +719,9 @@ Feature: Delete an expense
             |'hello'|
             |'{}'|
 
-    Scenario: A request to an invalid allocation expense ID is made
+    Scenario: A request to an invalid expense ID is made
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
-        When the user submits a request to update an expense on an invalid allocation expense ID
+        When the user submits a request to delete an expense on an invalid expense ID
         Then the request is rejected
         Examples:
             |ID|
@@ -661,12 +731,15 @@ Feature: Delete an expense
             |'{}'|
 
     Scenario: A request to a locked allocation period is made
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+        Given the user holds a valid role "<role>"
         And a locked allocation period exists in the database
-        When the user submits a request to create an expense on the locked period
+        When the user submits a request to delete an expense on the locked period
         Then the request is rejected
         And an explanation is given
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
 Feature: Create an activity
     Background:
@@ -674,24 +747,25 @@ Feature: Create an activity
         And the requesting user is logged in as this user
         And at least one allocation period exists in the database
 
-    Scenario: A privileged user creates an allocation period
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+    Scenario: A privileged user creates an activity
+        Given the user holds a valid role "<role>"
         And an unlocked allocation period exists in the database
         When the user submits a request to create an activity on an allocation period
         Then the activity is created
         And the activity is returned
         And the activity shows in the list of all activities
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
     Scenario: An unprivileged user creates an activity
-        Given the user does not hold the "admin" role
-        And the user does not hold the "analyst" role
+        Given the user holds the "viewer" role
         When the user submits a request to create an activity
         Then the request is rejected as unprivileged
 
     Scenario: A request to an invalid allocation period ID is made
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
         When the user submits a request to create an activity on an invalid allocation period ID
         Then the request is rejected
         Examples:
@@ -702,19 +776,22 @@ Feature: Create an activity
             |'{}'|
 
     Scenario: A request to a locked allocation period is made
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+        Given the user holds a valid role "<role>"
         And a locked allocation period exists in the database
         When the user submits a request to create an activity on the locked period
         Then the request is rejected
         And an explanation is given
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
 Feature: Get all activities
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
         And at least one allocation period exists in the database
-        And at least one expense exists assigned to an allocation period
+        And at least one activity exists assigned to an allocation period
 
     Scenario: Get a list of activities by allocation period ID
         When the user sends a valid allocation period ID
@@ -768,23 +845,24 @@ Feature: Update an activity
         And at least one allocation period exists in the database
         And at least one activity exists assigned to an allocation period
 
-    Scenario: A privileged user updates an allocation period
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+    Scenario: A privileged user updates an activity
+        Given the user holds a valid role "<role>"
         And an unlocked allocation period exists in the database
         When the user submits a request to update an activity on an allocation period
         Then the activity is updated
         And the activity is returned
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
     Scenario: An unprivileged user updates an activity
-        Given the user does not hold the "admin" role
-        And the user does not hold the "analyst" role
+        Given the user holds the "viewer" role
         When the user submits a request to update an activity
         Then the request is rejected as unprivileged
 
     Scenario: A request to an invalid allocation period ID is made
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
         When the user submits a request to update an activity on an invalid allocation period ID
         Then the request is rejected
         Examples:
@@ -794,10 +872,9 @@ Feature: Update an activity
             |'hello'|
             |'{}'|
 
-    Scenario: A request to an invalid allocation activity ID is made
+    Scenario: A request to an invalid activity ID is made
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
-        When the user submits a request to update an activity on an invalid allocation activity ID
+        When the user submits a request to update an activity on an invalid activity ID
         Then the request is rejected
         Examples:
             |ID|
@@ -807,12 +884,15 @@ Feature: Update an activity
             |'{}'|
 
     Scenario: A request to a locked allocation period is made
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+        Given the user holds a valid role "<role>"
         And a locked allocation period exists in the database
-        When the user submits a request to create an activity on the locked period
+        When the user submits a request to update an activity on the locked period
         Then the request is rejected
         And an explanation is given
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
 Feature: Delete an activity
     Background:
@@ -821,25 +901,25 @@ Feature: Delete an activity
         And at least one allocation period exists in the database
         And at least one activity exists assigned to an allocation period
 
-    Scenario: A privileged user deletes an allocation period
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+    Scenario: A privileged user deletes an activity
+        Given the user holds a valid role "<role>"
         And an unlocked allocation period exists in the database
-        When the user submits a request to update an activity on an allocation period
+        When the user submits a request to delete an activity on an allocation period
         Then the activity is deleted
-        And the activity is returned
         And the activity does not appear in the full list of activities
+        Examples:
+            |role|
+            |admin|
+            |analyst|
 
     Scenario: An unprivileged user deletes an activity
-        Given the user does not hold the "admin" role
-        And the user does not hold the "analyst" role
-        When the user submits a request to update an activity
+        Given the user holds the "viewer" role
+        When the user submits a request to delete an activity
         Then the request is rejected as unprivileged
 
     Scenario: A request to an invalid allocation period ID is made
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
-        When the user submits a request to update an activity on an invalid allocation period ID
+        When the user submits a request to delete an activity on an invalid allocation period ID
         Then the request is rejected
         Examples:
             |ID|
@@ -848,10 +928,9 @@ Feature: Delete an activity
             |'hello'|
             |'{}'|
 
-    Scenario: A request to an invalid allocation activity ID is made
+    Scenario: A request to an invalid activity ID is made
         Given the user holds the "admin" role
-        Or the user holds the "analyst" role
-        When the user submits a request to update an activity on an invalid allocation activity ID
+        When the user submits a request to delete an activity on an invalid activity ID
         Then the request is rejected
         Examples:
             |ID|
@@ -861,9 +940,12 @@ Feature: Delete an activity
             |'{}'|
 
     Scenario: A request to a locked allocation period is made
-        Given the user holds the "admin" role
-        Or the user holds the "analyst" role
+        Given the user holds a valid role "<role>"
         And a locked allocation period exists in the database
-        When the user submits a request to create an activity on the locked period
+        When the user submits a request to delete an activity on the locked period
         Then the request is rejected
         And an explanation is given
+        Examples:
+            |role|
+            |admin|
+            |analyst|
