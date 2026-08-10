@@ -293,21 +293,21 @@ class TestGetCurrentUser:
         assert_unauthorized(resp)
 
 
-def _create_user(client: TestClient, headers: dict, payload: dict):
-    """POST to /auth/users and return the raw response."""
-    return client.post('/auth/users', json=payload, headers=headers)
-
-
-_VALID_USER = {
-    'username': 'newuser',
-    'email': 'newuser@example.com',
-    'password': 'Password1!',
-    'role': 'viewer',
-}
-
 
 class TestCreateUser:
     """Feature: Create user — POST /auth/users"""
+
+    def _create_user(self, client: TestClient, headers: dict, payload: dict):
+        """POST to /auth/users and return the raw response."""
+        return client.post('/auth/users', json=payload, headers=headers)
+
+
+    _VALID_USER = {
+        'username': 'newuser',
+        'email': 'newuser@example.com',
+        'password': 'Password1!',
+        'role': 'viewer',
+    }
 
     def test_unauthenticated_request_is_rejected(self, client: TestClient):
         """
@@ -316,7 +316,7 @@ class TestCreateUser:
             When the user tries to create a new user
             Then the endpoint rejects the request
         """
-        resp = _create_user(client, headers={}, payload=_VALID_USER)
+        resp = self._create_user(client, headers={}, payload=self._VALID_USER)
         assert_unauthorized(resp)
 
     @pytest.mark.parametrize('role', ['analyst', 'viewer'])
@@ -331,7 +331,7 @@ class TestCreateUser:
             Then the request is rejected as unprivileged
         """
         headers = analyst_headers if role == 'analyst' else viewer_headers
-        resp = _create_user(client, headers=headers, payload=_VALID_USER)
+        resp = self._create_user(client, headers=headers, payload=self._VALID_USER)
         assert_forbidden(resp)
 
     def test_admin_can_create_user(self, client: TestClient, admin_headers: dict):
@@ -347,14 +347,14 @@ class TestCreateUser:
         users_before = client.get('/auth/users', headers=admin_headers).json()
         count_before = len(users_before)
 
-        resp = _create_user(client, headers=admin_headers, payload=_VALID_USER)
+        resp = self._create_user(client, headers=admin_headers, payload=self._VALID_USER)
 
         assert_created(resp)
         data = resp.json()
         assert_user_shape(data)
-        assert data['username'] == _VALID_USER['username']
-        assert data['email'] == _VALID_USER['email']
-        assert data['role'] == _VALID_USER['role']
+        assert data['username'] == self._VALID_USER['username']
+        assert data['email'] == self._VALID_USER['email']
+        assert data['role'] == self._VALID_USER['role']
         assert data['is_active'] is True
 
         # Database count increased by exactly one
@@ -370,19 +370,19 @@ class TestCreateUser:
         Scenario: Admin users can register another user — new user shows in full list
             After creation the new user is visible in GET /auth/users
         """
-        _create_user(client, headers=admin_headers, payload=_VALID_USER)
+        self._create_user(client, headers=admin_headers, payload=self._VALID_USER)
 
         users = client.get('/auth/users', headers=admin_headers).json()
         usernames = {u['username'] for u in users}
-        assert _VALID_USER['username'] in usernames, (
-            f"Newly created user '{_VALID_USER['username']}' not found in user list"
+        assert self._VALID_USER['username'] in usernames, (
+            f"Newly created user '{self._VALID_USER['username']}' not found in user list"
         )
 
     def test_created_user_response_has_no_sensitive_fields(
         self, client: TestClient, admin_headers: dict
     ):
         """The create-user response must not expose hashed_pwd or any similar field."""
-        resp = _create_user(client, headers=admin_headers, payload=_VALID_USER)
+        resp = self._create_user(client, headers=admin_headers, payload=self._VALID_USER)
         assert_created(resp)
         assert_no_sensitive_fields(resp.json())
 
@@ -396,12 +396,12 @@ class TestCreateUser:
             and what is used for subsequent auth checks.
         """
         payload = {
-            **_VALID_USER,
+            **self._VALID_USER,
             'username': f'roletest_{role}',
             'email': f'{role}test@example.com',
             'role': role,
         }
-        resp = _create_user(client, headers=admin_headers, payload=payload)
+        resp = self._create_user(client, headers=admin_headers, payload=payload)
         assert_created(resp)
         assert resp.json()['role'] == role
 
@@ -410,13 +410,13 @@ class TestCreateUser:
         Scenario: Admin users can register another user — new user can authenticate
             After creation, the new user can obtain a token using their credentials.
         """
-        _create_user(client, headers=admin_headers, payload=_VALID_USER)
+        self._create_user(client, headers=admin_headers, payload=self._VALID_USER)
 
         login_resp = client.post(
             '/auth/token',
             data={
-                'username': _VALID_USER['username'],
-                'password': _VALID_USER['password'],
+                'username': self._VALID_USER['username'],
+                'password': self._VALID_USER['password'],
             },
         )
         assert login_resp.status_code == 200, (
@@ -425,28 +425,19 @@ class TestCreateUser:
         assert 'access_token' in login_resp.json()
 
     @pytest.mark.parametrize(
-        'missing_field,payload',
+        'payload',
         [
-            (
-                'username',
-                {
-                    'email': 'user@example.com',
-                    'password': 'Password1!',
-                    'role': 'viewer',
-                },
-            ),
-            (
-                'email',
-                {'username': 'someuser', 'password': 'Password1!', 'role': 'viewer'},
-            ),
-            (
-                'password',
-                {'username': 'someuser', 'email': 'user@example.com', 'role': 'viewer'},
-            ),
+            {
+                'email': 'user@example.com',
+                'password': 'Password1!',
+                'role': 'viewer',
+            },
+            {'username': 'someuser', 'password': 'Password1!', 'role': 'viewer'},
+            {'username': 'someuser', 'email': 'user@example.com', 'role': 'viewer'},
         ],
     )
     def test_missing_required_fields_are_rejected(
-        self, client: TestClient, admin_headers: dict, missing_field: str, payload: dict
+        self, client: TestClient, admin_headers: dict, payload: dict
     ):
         """
         Scenario: Sign-ups missing details are rejected
@@ -455,11 +446,8 @@ class TestCreateUser:
             When the user makes a request missing one or more details
             Then the request is rejected
         """
-        resp = _create_user(client, headers=admin_headers, payload=payload)
-        (
-            assert_unprocessable(resp),
-            (f"Expected 422 when '{missing_field}' is missing, got {resp.status_code}"),
-        )
+        resp = self._create_user(client, headers=admin_headers, payload=payload)
+        assert_unprocessable(resp)
 
     def test_empty_role_defaults_to_viewer(
         self, client: TestClient, admin_headers: dict
@@ -469,8 +457,8 @@ class TestCreateUser:
             The role field has a server-side default of "viewer".
             Omitting it should succeed, not be rejected.
         """
-        payload = {k: v for k, v in _VALID_USER.items() if k != 'role'}
-        resp = _create_user(client, headers=admin_headers, payload=payload)
+        payload = {k: v for k, v in self._VALID_USER.items() if k != 'role'}
+        resp = self._create_user(client, headers=admin_headers, payload=payload)
         assert_created(resp)
         assert resp.json()['role'] == 'viewer'
 
@@ -494,12 +482,9 @@ class TestCreateUser:
             When the user tries to register another user with a malformed email
             Then the request is rejected
         """
-        payload = {**_VALID_USER, 'email': bad_email}
-        resp = _create_user(client, headers=admin_headers, payload=payload)
-        (
-            assert_unprocessable(resp),
-            (f"Expected 422 for invalid email '{bad_email}', got {resp.status_code}"),
-        )
+        payload = {**self._VALID_USER, 'email': bad_email}
+        resp = self._create_user(client, headers=admin_headers, payload=payload)
+        assert_unprocessable(resp)
 
     def test_duplicate_username_is_rejected(
         self, client: TestClient, admin_headers: dict
@@ -514,12 +499,12 @@ class TestCreateUser:
             And the originating user is informed of the conflict
         """
         # Create the user once
-        payload = {**_VALID_USER, 'username': 'user123', 'email': 'user123@example.com'}
-        first = _create_user(client, headers=admin_headers, payload=payload)
+        payload = {**self._VALID_USER, 'username': 'user123', 'email': 'user123@example.com'}
+        first = self._create_user(client, headers=admin_headers, payload=payload)
         assert_created(first)
 
         # Attempt to create again with the same username (different email)
-        duplicate = _create_user(
+        duplicate = self._create_user(
             client,
             headers=admin_headers,
             payload={**payload, 'email': 'different@example.com'},
@@ -540,15 +525,15 @@ class TestCreateUser:
         """
         # Create the user once
         payload = {
-            **_VALID_USER,
+            **self._VALID_USER,
             'username': 'firstuser',
             'email': 'shared@example.com',
         }
-        first = _create_user(client, headers=admin_headers, payload=payload)
+        first = self._create_user(client, headers=admin_headers, payload=payload)
         assert_created(first)
 
         # Attempt a second user with the same email (different username)
-        duplicate = _create_user(
+        duplicate = self._create_user(
             client,
             headers=admin_headers,
             payload={**payload, 'username': 'seconduser'},
@@ -603,7 +588,7 @@ class TestCreateUser:
             'password': weak_password,
             'role': 'viewer',
         }
-        resp = _create_user(client, headers=admin_headers, payload=payload)
+        resp = self._create_user(client, headers=admin_headers, payload=payload)
         assert resp.status_code in (400, 422), (
             f"Expected rejection for weak password '{weak_password}', "
             f'got {resp.status_code}: {resp.text}'
