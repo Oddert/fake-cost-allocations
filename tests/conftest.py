@@ -29,34 +29,51 @@ from app import db
 from app.main import app
 from app.auth import hash_password
 
-
-# ---------------------------------------------------------------------------
-# Seed constants — mirror app/seed.py so tests can reference them by name
-# ---------------------------------------------------------------------------
-
 SEED_USERS = [
-    {"username": "admin",   "email": "admin@example.com",   "password": "admin123",   "role": "admin"},
-    {"username": "analyst", "email": "analyst@example.com", "password": "analyst123", "role": "analyst"},
-    {"username": "viewer",  "email": "viewer@example.com",  "password": "viewer123",  "role": "viewer"},
+    {
+        'username': 'admin',
+        'email': 'admin@example.com',
+        'password': 'admin123',
+        'role': 'admin',
+    },
+    {
+        'username': 'analyst',
+        'email': 'analyst@example.com',
+        'password': 'analyst123',
+        'role': 'analyst',
+    },
+    {
+        'username': 'viewer',
+        'email': 'viewer@example.com',
+        'password': 'viewer123',
+        'role': 'viewer',
+    },
 ]
 
 SEED_COST_CENTRES = [
-    {"code": "TECH", "name": "Technology",      "description": "IT infrastructure, software, and development"},
-    {"code": "FIN",  "name": "Finance",         "description": "Finance and accounting operations"},
-    {"code": "HR",   "name": "Human Resources", "description": "People and talent management"},
-    {"code": "OPS",  "name": "Operations",      "description": "Core business operations"},
+    {
+        'code': 'TECH',
+        'name': 'Technology',
+        'description': 'IT infrastructure, software, and development',
+    },
+    {
+        'code': 'FIN',
+        'name': 'Finance',
+        'description': 'Finance and accounting operations',
+    },
+    {
+        'code': 'HR',
+        'name': 'Human Resources',
+        'description': 'People and talent management',
+    },
+    {'code': 'OPS', 'name': 'Operations', 'description': 'Core business operations'},
 ]
 
 SEED_LEGAL_ENTITIES = [
-    {"code": "UK001", "name": "Acme UK Ltd",       "country_code": "GBR"},
-    {"code": "IE001", "name": "Acme Ireland Ltd",  "country_code": "IRL"},
-    {"code": "DE001", "name": "Acme Germany GmbH", "country_code": "DEU"},
+    {'code': 'UK001', 'name': 'Acme UK Ltd', 'country_code': 'GBR'},
+    {'code': 'IE001', 'name': 'Acme Ireland Ltd', 'country_code': 'IRL'},
+    {'code': 'DE001', 'name': 'Acme Germany GmbH', 'country_code': 'DEU'},
 ]
-
-
-# ---------------------------------------------------------------------------
-# Store reset helpers
-# ---------------------------------------------------------------------------
 
 def _clear_store() -> None:
     """Wipe every table and reset all sequences to 0."""
@@ -92,39 +109,34 @@ def _seed_store() -> None:
     for u in SEED_USERS:
         uid = db.seq_users.nextval()
         db.users[uid] = {
-            "user_id":     uid,
-            "username":    u["username"],
-            "email":       u["email"],
-            "hashed_pwd":  hash_password(u["password"]),
-            "role":        u["role"],
-            "is_active":   True,
-            "created_at":  db.utcnow(),
+            'user_id': uid,
+            'username': u['username'],
+            'email': u['email'],
+            'hashed_pwd': hash_password(u['password']),
+            'role': u['role'],
+            'is_active': True,
+            'created_at': db.utcnow(),
         }
 
     for cc in SEED_COST_CENTRES:
         cid = db.seq_cost_centres.nextval()
         db.cost_centres[cid] = {
-            "cost_centre_id": cid,
-            "code":           cc["code"],
-            "name":           cc["name"],
-            "description":    cc["description"],
-            "is_active":      True,
+            'cost_centre_id': cid,
+            'code': cc['code'],
+            'name': cc['name'],
+            'description': cc['description'],
+            'is_active': True,
         }
 
     for le in SEED_LEGAL_ENTITIES:
         eid = db.seq_legal_entities.nextval()
         db.legal_entities[eid] = {
-            "legal_entity_id": eid,
-            "code":            le["code"],
-            "name":            le["name"],
-            "country_code":    le["country_code"],
-            "is_active":       True,
+            'legal_entity_id': eid,
+            'code': le['code'],
+            'name': le['name'],
+            'country_code': le['country_code'],
+            'is_active': True,
         }
-
-
-# ---------------------------------------------------------------------------
-# Core fixture: client with isolated state
-# ---------------------------------------------------------------------------
 
 @pytest.fixture()
 def client() -> TestClient:
@@ -140,55 +152,46 @@ def client() -> TestClient:
         yield c
     _clear_store()
 
-
-# ---------------------------------------------------------------------------
-# Token fixtures
-# ---------------------------------------------------------------------------
-
 @pytest.fixture()
 def admin_token(client: TestClient) -> str:
     """Bearer token for the seeded admin user."""
-    return _acquire_token(client, "admin", "admin123")
+    return _acquire_token(client, 'admin', 'admin123')
 
 
 @pytest.fixture()
 def analyst_token(client: TestClient) -> str:
     """Bearer token for the seeded analyst user."""
-    return _acquire_token(client, "analyst", "analyst123")
+    return _acquire_token(client, 'analyst', 'analyst123')
 
 
 @pytest.fixture()
 def viewer_token(client: TestClient) -> str:
     """Bearer token for the seeded viewer user."""
-    return _acquire_token(client, "viewer", "viewer123")
+    return _acquire_token(client, 'viewer', 'viewer123')
 
 
 def _acquire_token(client: TestClient, username: str, password: str) -> str:
     """POST to /auth/token and return the raw access_token string."""
     resp = client.post(
-        "/auth/token",
-        data={"username": username, "password": password},
+        '/auth/token',
+        data={'username': username, 'password': password},
     )
     assert resp.status_code == 200, (
         f"Token acquisition failed for '{username}': {resp.status_code} {resp.text}"
     )
-    return resp.json()["access_token"]
+    return resp.json()['access_token']
 
-
-# ---------------------------------------------------------------------------
-# Header fixtures (convenience wrappers)
-# ---------------------------------------------------------------------------
 
 @pytest.fixture()
 def admin_headers(admin_token: str) -> dict:
-    return {"Authorization": f"Bearer {admin_token}"}
+    return {'Authorization': f'Bearer {admin_token}'}
 
 
 @pytest.fixture()
 def analyst_headers(analyst_token: str) -> dict:
-    return {"Authorization": f"Bearer {analyst_token}"}
+    return {'Authorization': f'Bearer {analyst_token}'}
 
 
 @pytest.fixture()
 def viewer_headers(viewer_token: str) -> dict:
-    return {"Authorization": f"Bearer {viewer_token}"}
+    return {'Authorization': f'Bearer {viewer_token}'}
