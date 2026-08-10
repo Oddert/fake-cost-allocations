@@ -1,14 +1,6 @@
 """
 Tests for the authentication endpoints.
 
-Covers the following features from test-cases.md:
-  - Feature: login
-  - Feature: List users
-  - Feature: get user details
-
-Each test maps to a named scenario in test-cases.md.  The scenario name is
-used as the test docstring so failures are self-documenting.
-
 Endpoints under test
 --------------------
   POST /auth/token
@@ -23,15 +15,19 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.utils.assertions import (
+    assert_bad_request,
     assert_created,
     assert_forbidden,
+    assert_no_content,
     assert_no_sensitive_fields,
     assert_ok,
     assert_token_shape,
-    assert_unauthorized,
+    assert_unauthorised,
     assert_unprocessable,
     assert_user_shape,
 )
+
+from tests.conftest import _acquire_token
 
 
 class TestLogin:
@@ -115,7 +111,6 @@ class TestLogin:
             When the user tries to log in
             Then the request is rejected
         """
-        # Deactivate the analyst user via the admin endpoint
         users_resp = client.get('/auth/users', headers=admin_headers)
         analyst = next(u for u in users_resp.json() if u['username'] == 'analyst')
         client.patch(
@@ -123,7 +118,6 @@ class TestLogin:
             headers=admin_headers,
         )
 
-        # Deactivated user cannot obtain a token
         resp = client.post(
             '/auth/token',
             data={'username': 'analyst', 'password': 'analyst123'},
@@ -167,7 +161,7 @@ class TestListUsers:
             Then the endpoint rejects the request
         """
         resp = client.get('/auth/users')
-        assert_unauthorized(resp)
+        assert_unauthorised(resp)
 
     def test_admin_gets_full_list_of_users(
         self, client: TestClient, admin_headers: dict
@@ -268,7 +262,7 @@ class TestGetCurrentUser:
             Then the endpoint rejects the request
         """
         resp = client.get('/auth/users/me')
-        assert_unauthorized(resp)
+        assert_unauthorised(resp)
 
     def test_me_response_has_no_sensitive_fields(
         self, client: TestClient, viewer_headers: dict
@@ -290,8 +284,7 @@ class TestGetCurrentUser:
             '/auth/users/me',
             headers={'Authorization': 'Bearer this.is.not.a.valid.token'},
         )
-        assert_unauthorized(resp)
-
+        assert_unauthorised(resp)
 
 
 class TestCreateUser:
@@ -300,7 +293,6 @@ class TestCreateUser:
     def _create_user(self, client: TestClient, headers: dict, payload: dict):
         """POST to /auth/users and return the raw response."""
         return client.post('/auth/users', json=payload, headers=headers)
-
 
     _VALID_USER = {
         'username': 'newuser',
@@ -317,7 +309,7 @@ class TestCreateUser:
             Then the endpoint rejects the request
         """
         resp = self._create_user(client, headers={}, payload=self._VALID_USER)
-        assert_unauthorized(resp)
+        assert_unauthorised(resp)
 
     @pytest.mark.parametrize('role', ['analyst', 'viewer'])
     def test_non_admin_cannot_create_user(
@@ -347,7 +339,9 @@ class TestCreateUser:
         users_before = client.get('/auth/users', headers=admin_headers).json()
         count_before = len(users_before)
 
-        resp = self._create_user(client, headers=admin_headers, payload=self._VALID_USER)
+        resp = self._create_user(
+            client, headers=admin_headers, payload=self._VALID_USER
+        )
 
         assert_created(resp)
         data = resp.json()
@@ -382,7 +376,9 @@ class TestCreateUser:
         self, client: TestClient, admin_headers: dict
     ):
         """The create-user response must not expose hashed_pwd or any similar field."""
-        resp = self._create_user(client, headers=admin_headers, payload=self._VALID_USER)
+        resp = self._create_user(
+            client, headers=admin_headers, payload=self._VALID_USER
+        )
         assert_created(resp)
         assert_no_sensitive_fields(resp.json())
 
@@ -498,12 +494,14 @@ class TestCreateUser:
             Then the request is rejected
             And the originating user is informed of the conflict
         """
-        # Create the user once
-        payload = {**self._VALID_USER, 'username': 'user123', 'email': 'user123@example.com'}
+        payload = {
+            **self._VALID_USER,
+            'username': 'user123',
+            'email': 'user123@example.com',
+        }
         first = self._create_user(client, headers=admin_headers, payload=payload)
         assert_created(first)
 
-        # Attempt to create again with the same username (different email)
         duplicate = self._create_user(
             client,
             headers=admin_headers,
@@ -512,7 +510,7 @@ class TestCreateUser:
         assert duplicate.status_code == 400, (
             f'Expected 400 for duplicate username, got {duplicate.status_code}: {duplicate.text}'
         )
-        # The response must explain the conflict
+
         detail = str(duplicate.json().get('detail', '')).lower()
         assert 'username' in detail or 'taken' in detail or 'already' in detail, (
             f'Error detail should mention the username conflict, got: {duplicate.json()}'
@@ -523,7 +521,6 @@ class TestCreateUser:
         Scenario: Two users with the same email cannot be registered
             Duplicate email must be rejected with a clear error message.
         """
-        # Create the user once
         payload = {
             **self._VALID_USER,
             'username': 'firstuser',
@@ -532,7 +529,6 @@ class TestCreateUser:
         first = self._create_user(client, headers=admin_headers, payload=payload)
         assert_created(first)
 
-        # Attempt a second user with the same email (different username)
         duplicate = self._create_user(
             client,
             headers=admin_headers,
@@ -589,7 +585,142 @@ class TestCreateUser:
             'role': 'viewer',
         }
         resp = self._create_user(client, headers=admin_headers, payload=payload)
-        assert resp.status_code in (400, 422), (
-            f"Expected rejection for weak password '{weak_password}', "
-            f'got {resp.status_code}: {resp.text}'
+        assert resp.status_code in (400, 422)
+
+
+class TestDeactivateUser:
+    _VALID_USER = {
+        'username': 'deactivate_target',
+        'email': 'deactivate_target@example.com',
+        'password': 'Password1!',
+        'role': 'viewer',
+    }
+
+    @pytest.fixture(autouse=True)
+    def seed_user(self, client: TestClient, admin_headers: dict):
+        """Create a user in the seeded store before each test runs."""
+        resp = client.post('/auth/users', json=self._VALID_USER, headers=admin_headers)
+        assert_created(resp)
+        self.seeded_user = resp.json()
+
+    def _deactivate_user(self, client: TestClient, headers: dict, user_id: str):
+        """PATCH to /auth/users/{user_id}/deactivate and return the raw response."""
+        return client.patch(f'/auth/users/{user_id}/deactivate', headers=headers)
+
+    def test_unauthenticated_request_is_rejected(self, client: TestClient):
+        """
+        Scenario: Unauthenticated user tries to access a protected endpoint
+            Given: the user is not logged in
+            When the user tries to access the endpoint
+            Then the endpoint rejects the request
+        """
+        resp = self._deactivate_user(
+            client, headers={}, user_id=self.seeded_user['user_id']
         )
+        assert_unauthorised(resp)
+
+    def test_admins_deactivate_user(self, client: TestClient, admin_headers: dict):
+        """
+        Scenario: An admin deactivates a user
+            Given the user is logged in
+            And the user has the "admin" role
+            When the user attempts to deactivate another user
+            Then the user is deactivated
+            And the details of the deactivated user are returned
+            And the deactivated user details can no longer login
+        """
+        resp = self._deactivate_user(
+            client, headers=admin_headers, user_id=self.seeded_user['user_id']
+        )
+        assert resp.status_code == 200
+        assert resp.json()['username'] == self._VALID_USER['username']
+
+    def test_cannot_deactivate_self(
+        self, client: TestClient, admin_headers: dict, admin_user: dict
+    ):
+        """
+        Scenario: user cannot deactivate themselves
+            Given the user is logged in
+            And the user has the "admin" role
+            When the user attempt to deactivate their own account
+            Then the request is rejected
+        """
+        resp = self._deactivate_user(
+            client, headers=admin_headers, user_id=admin_user['user_id']
+        )
+        assert resp.status_code == 400
+
+
+class TestChangePassword:
+    _VALID_USER = {
+        'username': 'pwd_change_target',
+        'email': 'pwd_change_target@example.com',
+        'password': 'Password1!',
+        'role': 'viewer',
+    }
+
+    @pytest.fixture(autouse=True)
+    def seed_user(self, client: TestClient, admin_headers: dict):
+        """Create a user in the seeded store before each test runs."""
+        resp = client.post('/auth/users', json=self._VALID_USER, headers=admin_headers)
+        assert_created(resp)
+        res_json = resp.json()
+        self.seeded_user = res_json
+        self.token = _acquire_token(
+            client, self._VALID_USER['username'], self._VALID_USER['password']
+        )
+
+    def test_unauthenticated_request_is_rejected(self, client: TestClient):
+        """
+        Scenario: Unauthenticated user tries to access a protected endpoint
+            Given the user is not logged in
+            When the user requests a list of users
+            Then the endpoint rejects the request
+        """
+        resp = client.get('/auth/users')
+        assert_unauthorised(resp)
+
+    def test_change_password(self, client: TestClient):
+        """
+        Scenario: User successfully changes their password
+            When the user submits their old and new password
+            Then the password for that user is updated
+            And the new password can be used to login
+            And the old password can no longer be used to login
+        """
+        old_pass = self._VALID_USER['password']
+        next_pass = 'newPass*123987'
+        resp = client.post(
+            '/auth/users/me/change-password',
+            headers={'Authorization': f'Bearer {self.token}'},
+            json={
+                'current_password': old_pass,
+                'new_password': next_pass,
+            },
+        )
+        assert_no_content(resp)
+
+        old_token_refresh_attempt = client.post(
+            '/auth/token',
+            data={'username': self._VALID_USER['username'], 'password': old_pass},
+        )
+        assert old_token_refresh_attempt.status_code == 401
+
+    def test_cannot_change_without_old_password(self, client: TestClient):
+        """
+        Scenario: User unsuccessfully changes their password
+            When the user submits their old and new password
+            And the old password is not correct
+            Then the request is rejected
+        """
+        old_pass = 'INCORRECT PASSWORD'
+        next_pass = 'newPass*123987'
+        resp = client.post(
+            '/auth/users/me/change-password',
+            headers={'Authorization': f'Bearer {self.token}'},
+            json={
+                'current_password': old_pass,
+                'new_password': next_pass,
+            },
+        )
+        assert_bad_request(resp)

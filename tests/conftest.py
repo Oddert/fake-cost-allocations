@@ -169,6 +169,23 @@ def viewer_token(client: TestClient) -> str:
     """Bearer token for the seeded viewer user."""
     return _acquire_token(client, 'viewer', 'viewer123')
 
+@pytest.fixture()
+def admin_user(client: TestClient):
+    """User details for the seeded admin user."""
+    return _get_user(client, 'admin')
+
+
+@pytest.fixture()
+def analyst_user(client: TestClient):
+    """User details for the seeded analyst user."""
+    return _get_user(client, 'analyst')
+
+
+@pytest.fixture()
+def viewer_user(client: TestClient):
+    """User details for the seeded viewer user."""
+    return _get_user(client, 'viewer')
+
 
 def _acquire_token(client: TestClient, username: str, password: str) -> str:
     """POST to /auth/token and return the raw access_token string."""
@@ -180,6 +197,11 @@ def _acquire_token(client: TestClient, username: str, password: str) -> str:
         f"Token acquisition failed for '{username}': {resp.status_code} {resp.text}"
     )
     return resp.json()['access_token']
+
+def _get_user(client: TestClient, username: str):
+    """POST to /auth/token and return the raw access_token string."""
+    user = db.find_one(db.users, username=username)
+    return user
 
 
 @pytest.fixture()
