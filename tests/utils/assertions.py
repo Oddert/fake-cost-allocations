@@ -113,10 +113,7 @@ def assert_token_shape(data: dict) -> None:
 
 def assert_user_shape(data: dict) -> None:
     """
-    Assert a UserResponse object has the correct shape and no sensitive fields.
-
-    Checks required fields are present, types are correct, and that
-    hashed_pwd (and similar) are absent.
+    Assert a user response object has the correct shape and no sensitive fields.
     """
     required = {'user_id', 'username', 'email', 'role', 'is_active'}
     missing = required - data.keys()
@@ -132,6 +129,32 @@ def assert_user_shape(data: dict) -> None:
     assert data['role'] in ('admin', 'analyst', 'viewer'), (
         f"role must be one of admin/analyst/viewer, got '{data['role']}'"
     )
+    assert isinstance(data['is_active'], bool), 'is_active must be a boolean'
+
+    assert_no_sensitive_fields(data)
+
+def assert_cost_centre_shape(data: dict) -> None:
+    """
+    Assert a cost centre object has the correct shape and no sensitive fields.
+    """
+    required = {'code', 'name', 'is_active'}
+    missing = required - data.keys()
+    assert not missing, f'UserResponse missing fields: {missing}'
+
+    assert isinstance(data['code'], str) and data['code'], (
+        'code must be a non-empty string'
+    )
+    assert isinstance(data['description'], str) and data['description'], (
+        'description must be a non-empty string'
+    )
+    if data['description']:
+        assert isinstance(data['description'], str), (
+            'description must be a valid string or null'
+        )
+    if data['cost_centre_id']:
+        assert isinstance(data['cost_centre_id'], int), (
+            'cost_centre_id must be a valid string or null'
+        )
     assert isinstance(data['is_active'], bool), 'is_active must be a boolean'
 
     assert_no_sensitive_fields(data)

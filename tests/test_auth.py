@@ -7,8 +7,8 @@ Endpoints under test
   GET  /auth/users
   POST  /auth/users
   GET  /auth/users/me
-  TODO PATCH /auth/users/{user_id}/deactivate
-  TODO POST /auth/users/me/change-password
+  PATCH /auth/users/{user_id}/deactivate
+  POST /auth/users/me/change-password
 """
 
 import pytest
