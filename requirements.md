@@ -73,13 +73,14 @@ CA-REQ-066|Activities|Users can get a list of activities by allocation period ID
 CA-REQ-067|Activities|Users can query an activity by period ID and activity ID|''
 CA-REQ-068|Activities|Privileged users can update non-critical details on an activity attached to an unlocked allocation period|''
 CA-REQ-069|Activities|Privileged users can delete an activity on an unlocked allocation period|''
+CA-REQ-070|Security|Strong CORs controls and other header settings are used|''
 
-## Requirement Map
+## Scenario - Requirement Map
 
 Requirement|Feature|Scenario|Verification Method
 ---|---|---|---
 CA-REQ-001|Code quality and conformity|No linter violations are present|automatic
-CA-REQ-002|Code quality and conformity|Code conforms to linting style formatters|automatic
+CA-REQ-002|Code quality and conformity|Code conforms to linting style formatters|automatic, manual code review (white box)
 CA-REQ-003|Code quality and conformity|Type hints are used|Code review (white box)
 CA-REQ-003|Code quality and conformity|Type security is robust|Code review (white box)
 CA-REQ-004|Code quality and conformity|No commented (out) code is present|Code review (white box)
@@ -212,3 +213,5 @@ CA-REQ-069|Delete an activity|An unprivileged user deletes an activity|automatic
 CA-REQ-069|Delete an activity|A request to an invalid allocation period ID is made|automatic
 CA-REQ-069|Delete an activity|A request to an invalid activity ID is made|automatic
 CA-REQ-069|Delete an activity|A request to a locked allocation period is made|automatic
+CA-REQ-070|General Security|Strong header settings are used|manual
+CA-REQ-070|General Security|Strong CORs controls are in place|manual

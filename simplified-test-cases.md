@@ -178,3 +178,6 @@ Feature: Delete an activity
     Scenario: A request to an invalid allocation period ID is made
     Scenario: A request to an invalid activity ID is made
     Scenario: A request to a locked allocation period is made
+Feature: General Security
+    Scenario: Strong header settings are used
+    Scenario: Strong CORs controls are in place

@@ -1150,3 +1150,13 @@ Feature: Delete an activity
             |role|
             |admin|
             |analyst|
+
+Feature: General Security
+    Scenario: Strong header settings are used
+        When an API request is made
+        No architecture information is revealed in the headers
+
+    Scenario: Strong CORs controls are in place
+        When an API request is made
+        CORs headers are sent defining valid sources
+        And the settings on the CORs headers are restrictive
