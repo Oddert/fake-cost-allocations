@@ -1,0 +1,214 @@
+# Requirements
+
+## Non Functional
+
+Code|Feature|Requirement|Description
+---|---|---|---
+CA-REQ-001|Code quality and conformity|Code has no linting errors|''
+CA-REQ-002|Code quality and conformity|Code conforms to standard style guides|''
+CA-REQ-003|Code quality and conformity|Code uses strong typing|''
+CA-REQ-004|Code quality and conformity|No commented code is used|''
+CA-REQ-005|Security|No unnecessary data is exposed|Ensure no endpoints are extraneous or deliver information that is not essential, e.g. done just to satisfy REST design principles.
+CA-REQ-006|Code quality and conformity|Folder structure conforms to standard|''
+CA-REQ-007|Code quality and conformity|Code complexity is low|''
+CA-REQ-008|Code quality and conformity|Resource utilisation is minimal|''
+CA-REQ-009|Inline documentation|Code logic is robustly documented with inline comments|''
+CA-REQ-010|Inline documentation|API endpoints are well documented|''
+CA-REQ-011|Inline documentation|All functions include docstrings|''
+CA-REQ-012|Inline documentation|Variable names are high quality|''
+CA-REQ-013|Static security|Static security scans are passed|''
+CA-REQ-014|Static security|Dependency scans are passed|''
+CA-REQ-015|OpenAPI linting conformity|Static linting against OpenAPI standards yields no errors|''
+CA-REQ-016|FCA & SOX compliance|Data held is non proprietary and can be exported to other systems|''
+CA-REQ-017|FCA & SOX compliance|An audit trail allows clear transaction history to be viewed for at least 7 years|''
+CA-REQ-018|FCA & SOX compliance|Transaction events are logged and searchable|''
+CA-REQ-019|FCA & SOX compliance|Data is backed up and secure from tampering and loss|''
+CA-REQ-020|FCA & SOX compliance|Data is stored on sovereign territories within the same regulatory environment as the bank|''
+CA-REQ-021|FCA & SOX compliance|Security breach events are recorded and reported to SOX auditors|''
+CA-REQ-022|FCA & SOX compliance|Controls are in place to restrict addition of new users|''
+CA-REQ-023|ISO/IEC27001 Compliance|The application passes an audit by a dedicated audit team|''
+CA-REQ-024|ISO/IEC27001 Compliance|The responsibilities and ownership of the system are documented and understood|''
+CA-REQ-025|ISO/IEC27001 Compliance|All system and data locations are documented|''
+CA-REQ-026|ISO/IEC27001 Compliance|Data access is controlled with RBAC on the principle of least privilege|''
+CA-REQ-027|ISO/IEC27001 Compliance|Data at-rest is encrypted|''
+CA-REQ-028|ISO/IEC27001 Compliance|All API requests are logged|''
+CA-REQ-029|ISO/IEC27001 Compliance|No extraneous information is exposed|''
+CA-REQ-030|GDPR Compliance|No personally identifiable information is stored unless absolutely necessary|''
+CA-REQ-031|Database schema compatibility|Primary key columns are complex and unique strings (UUID)|''
+CA-REQ-032|Database schema compatibility|Column types are compatible with Oracle data types|''
+CA-REQ-033|Database schema compatibility|Database actions like transactions are compatible with Oracle|''
+CA-REQ-034|Authentication|All main endpoints are protected and require valid authentication to access|''
+CA-REQ-035|Authentication|Users can login and gain an access token with a valid username/password unless their account is deactivated|''
+CA-REQ-036|Authentication|Admin users can request a list of all users with non-sensitive details|''
+CA-REQ-037|Authentication|Admin users can register another user and assign a role|''
+CA-REQ-038|Authentication|A baseline level of password complexity is enforced|''
+CA-REQ-039|Authentication|User can request their own non-sensitive profile details|''
+CA-REQ-040|Authentication|Admins can deactivate a user, revoking their access|''
+CA-REQ-041|Authentication|Users can change their password by supplying their old and new password|''
+CA-REQ-042|Cost Centres|Admin users can create a new cost centre|''
+CA-REQ-043|Cost Centres|Cost Centre codes are unique, identifiable and contained to 20 characters|''
+CA-REQ-044|Cost Centres|Users can request a list of all cost centres|''
+CA-REQ-045|Cost Centres|Users can filter all cost centres on their active status|''
+CA-REQ-046|Cost Centres|Users can query individual cost centres by ID|''
+CA-REQ-047|Cost Centres|Admins can update a cost centre's non-critical details|''
+CA-REQ-048|Legal Entities|Admin users can create a new legal entity|''
+CA-REQ-049|Legal Entities|Cost Centre codes are unique, identifiable and contained to 20 characters|''
+CA-REQ-050|Legal Entities|Users can request a list of all legal entities|''
+CA-REQ-051|Legal Entities|Users can query individual legal entities by ID|''
+CA-REQ-052|Legal Entities|Admins can update a legal entity's non-critical details|''
+CA-REQ-053|Allocation Periods|Privileged users can create a new allocation period|''
+CA-REQ-054|Allocation Periods|Each allocation has a unique, identifiable name|''
+CA-REQ-055|Allocation Periods|Users can get a list of all held allocation periods|''
+CA-REQ-056|Allocation Periods|Users can filter the list of all periods on mode, status, fiscal year|''
+CA-REQ-057|Allocation Periods|Query a specific allocation period by ID|''
+CA-REQ-058|Allocation Periods|Privileged users can update a non-locked allocation period's non-critical details|''
+CA-REQ-059|Allocation Periods|Admins can lock an allocation period|''
+CA-REQ-060|Expenses|Privileged users can create an expense on a valid, unlocked allocation period|''
+CA-REQ-061|Expenses|Users can get a list of expenses by allocation period ID|''
+CA-REQ-062|Expenses|Users can query a single expense by period ID and expense ID|''
+CA-REQ-063|Expenses|Privileged users can update non-critical details on an expense attached to an unlocked allocation period|''
+CA-REQ-064|Expenses|Privileged users can delete an expense on an unlocked allocation period|''
+CA-REQ-065|Activities|Privileged users can create an allocation activities on a valid, unlocked allocation period|''
+CA-REQ-066|Activities|Users can get a list of activities by allocation period ID|''
+CA-REQ-067|Activities|Users can query an activity by period ID and activity ID|''
+CA-REQ-068|Activities|Privileged users can update non-critical details on an activity attached to an unlocked allocation period|''
+CA-REQ-069|Activities|Privileged users can delete an activity on an unlocked allocation period|''
+
+## Requirement Map
+
+Requirement|Feature|Scenario|Verification Method
+---|---|---|---
+CA-REQ-001|Code quality and conformity|No linter violations are present|automatic
+CA-REQ-002|Code quality and conformity|Code conforms to linting style formatters|automatic
+CA-REQ-003|Code quality and conformity|Type hints are used|Code review (white box)
+CA-REQ-003|Code quality and conformity|Type security is robust|Code review (white box)
+CA-REQ-004|Code quality and conformity|No commented (out) code is present|Code review (white box)
+CA-REQ-002|Code quality and conformity|Static code quality scans yield no unjustified violations|automatic
+CA-REQ-006|Code quality and conformity|Folder structure and code splitting aligns with the team's standard|Code review (white box, speak aloud)
+CA-REQ-007|Code quality and conformity|Code complexity is kept as low as possible|Code review (white box, speak aloud)
+CA-REQ-008|Code quality and conformity|Application memory performance is efficient|manual
+CA-REQ-008|Code quality and conformity|Large lists of data are paginated|Manual
+CA-REQ-009|Inline documentation|Logic is robustly documented with inline comments|Code review (white box, speak aloud)
+CA-REQ-010|Inline documentation|API endpoints are well documented|Manual review (white box, speak aloud)
+CA-REQ-011|Inline documentation|All functions include docstrings|Code review (white box, speak aloud)
+CA-REQ-012|Inline documentation|Variable names are high quality|Code review (white box, speak aloud)
+CA-REQ-013|Static security|static SAST scans result in no errors|automatic
+CA-REQ-014|Static security|Dependency scans result in no issues|automatic
+CA-REQ-015|OpenAPI linting conformity|Static linting against OpenAPI standards yields no errors|automatic
+CA-REQ-016|FCA & SOX compliance|Data held is non proprietary and can be exported to other systems|code review (white box)
+CA-REQ-017|FCA & SOX compliance|An audit trail allows clear transaction history to be viewed for at least 7 years|code review (white box), process review
+CA-REQ-018|FCA & SOX compliance|Transaction events are logged and searchable|code review (white box)
+CA-REQ-019|FCA & SOX compliance|Data is backed up and secure from tampering and loss|system & process review (white box)
+CA-REQ-020|FCA & SOX compliance|Data is stored on sovereign territories within the same regulatory environment as the bank|system review (white box)
+CA-REQ-021|FCA & SOX compliance|Security breach events are recorded and reported to SOX auditors|manual (external)
+CA-REQ-022|FCA & SOX compliance|Controls are in place to restrict addition of new users|manual process review, code review (gray box)
+CA-REQ-023|ISO/IEC27001 Compliance|The application passes an audit by a dedicated audit team|manual (external)
+CA-REQ-024|ISO/IEC27001 Compliance|The responsibilities and ownership of the system are documented and understood|manual
+CA-REQ-025|ISO/IEC27001 Compliance|All system and data locations are documented|manual
+CA-REQ-026|ISO/IEC27001 Compliance|Data access is controlled with RBAC on the principle of least privilege|code review (gray box)
+CA-REQ-027|ISO/IEC27001 Compliance|Data at-rest is encrypted|code review (white box)
+CA-REQ-028|ISO/IEC27001 Compliance|All API requests are logged|code review (white box)
+CA-REQ-029|ISO/IEC27001 Compliance|No extraneous information is exposed|code review (gray box)
+CA-REQ-030|GDPR Compliance|No personally identifiable information is stored unless absolutely necessary|code review (white box)
+CA-REQ-031|Database schema compatibility|Primary key columns are complex and unique strings (UUID)|code review (gray box)
+CA-REQ-032|Database schema compatibility|Column types are compatible with Oracle data types|code review (white box)
+CA-REQ-033|Database schema compatibility|Database actions like transactions are compatible with Oracle|code review (white box)
+CA-REQ-034|Protected Endpoints|Unauthenticated user tries to access a protected endpoint|automatic
+CA-REQ-034|Protected Endpoints|Authenticated user tries to access a protected endpoint|automatic
+CA-REQ-035|login|Successful login with valid credentials|automatic
+CA-REQ-035|login|Failed login with incorrect credentials|automatic
+CA-REQ-035|login|Successful login as an existing user — deactivation blocks login|automatic
+CA-REQ-036|List users|Non-admin requests are rejected|automatic
+CA-REQ-036|List users|Admin user gets a list of all users|automatic
+CA-REQ-036|List users|No sensitive data is returned|automatic, manual
+CA-REQ-037|Create new user|Sign-ups missing details are rejected|automatic
+CA-REQ-037|Create new user|Sign-ups with invalid emails are rejected|automatic
+CA-REQ-037|Create new user|Non-admins cannot register a new user|automatic
+CA-REQ-037|Create new user|Admin users can register another user|automatic
+CA-REQ-037|Create new user|Two users of the same username cannot be registered|automatic
+CA-REQ-037|Create new user|Non-complex passwords are rejected|automatic, code review
+CA-REQ-039|get user details|A user requests their own profile details|automatic
+CA-REQ-039|get user details|No sensitive details are returned|automatic, manual
+CA-REQ-040|Deactivating a user|rejects non-admin requests|automatic
+CA-REQ-040|Deactivating a user|user cannot deactivate themselves|automatic
+CA-REQ-040|Deactivating a user|An admin deactivates a user|automatic
+CA-REQ-041|change password|User successfully changes their password|automatic
+CA-REQ-041|change password|User unsuccessfully changes their password|automatic
+CA-REQ-042|Creating a new cost centre|Admin users can create a new cost centre|automatic
+CA-REQ-042|Creating a new cost centre|Non-admins cannot create a cost centre|automatic
+CA-REQ-043|Creating a new cost centre|Duplicate cost centre codes are rejected|automatic
+CA-REQ-043|Creating a new cost centre|Long Cost Centre codes are not allowed|automatic
+CA-REQ-044|Get a list of all cost centres|returns a list of all held cost centres|automatic
+CA-REQ-045|Get a list of all cost centres|Returns only active cost centres with the flag set|automatic
+CA-REQ-046|Get single cost centre by id|Get a cost centre by ID|automatic
+CA-REQ-046|Get single cost centre by id|Query a missing cost centre|automatic
+CA-REQ-046|Get single cost centre by id|Get a cost centre with an invalid ID|automatic
+CA-REQ-047|Update a cost centre|An admin updates a cost centre's details|automatic
+CA-REQ-047|Update a cost centre|A request for a missing cost centre is rejected|automatic
+CA-REQ-047|Update a cost centre|An invalid ID is used in an update|automatic
+CA-REQ-047|Update a cost centre|An unprivileged user updates a cost centre|automatic
+CA-REQ-043|Update a cost centre|A cost centre code cannot be changed|automatic
+CA-REQ-048|Creating a new legal entity|Admin users can create a new legal entity|automatic
+CA-REQ-048|Creating a new legal entity|Non-admins cannot create a legal entity|automatic
+CA-REQ-049|Creating a new legal entity|Duplicate legal entity codes are rejected|automatic
+CA-REQ-050|Get a list of all legal entities|returns a list of all held legal entities|automatic, code review
+CA-REQ-051|Get single legal entity by ID|Get a legal entity by ID|automatic
+CA-REQ-051|Get single legal entity by ID|Get a legal entity with an invalid ID|automatic
+CA-REQ-052|Update a legal entity|An admin updates a legal entity's details|automatic
+CA-REQ-052|Update a legal entity|An invalid ID is used in an update|automatic
+CA-REQ-053|Creating a new allocation period|Privileged users can create a new allocation period|automatic
+CA-REQ-053|Creating a new allocation period|Non-analysts cannot create an allocation period|automatic
+CA-REQ-054|Creating a new allocation period|Duplicate allocation period names are rejected|automatic
+CA-REQ-055|Get a list of all allocation periods|Get a list of all held allocation periods|automatic
+CA-REQ-056|Get a list of all allocation periods|Get a list of only specific modes|automatic
+CA-REQ-056|Get a list of all allocation periods|Get a list of only specific status|automatic
+CA-REQ-056|Get a list of all allocation periods|Get a list of only specific fiscal year|automatic
+CA-REQ-056|Get a list of all allocation periods|Get a list of periods with multiple filters|automatic, manual
+CA-REQ-057|Get single allocation period by ID|Get an allocation period by ID|automatic
+CA-REQ-057|Get single allocation period by ID|Get an allocation period with an invalid ID|automatic
+CA-REQ-058|Update an allocation period|A privileged user updates an allocation period's details|automatic
+CA-REQ-058|Update an allocation period|An invalid ID is used in an update|automatic
+CA-REQ-058|Update an allocation period|An unprivileged user updates a period|automatic
+CA-REQ-058|Update an allocation period|Request to update a locked period|automatic
+CA-REQ-059|lock a period|An admin locks an allocation period|automatic
+CA-REQ-059|lock a period|An unprivileged user locks an allocation period|automatic
+CA-REQ-059|lock a period|An invalid ID is used to lock a period|automatic
+CA-REQ-059|lock a period|An admin locks an allocation period which is already locked|automatic
+CA-REQ-060|Create an expense|A privileged user creates an expense|automatic
+CA-REQ-060|Create an expense|An unprivileged user creates an expense|automatic
+CA-REQ-060|Create an expense|A request to an invalid allocation period ID is made|automatic
+CA-REQ-060|Create an expense|A request to a locked allocation period is made|automatic
+CA-REQ-061|get all expenses|Get a list of expenses by allocation period ID|automatic
+CA-REQ-061|get all expenses|Get a list of expenses with an invalid allocation period ID|automatic
+CA-REQ-062|get single expense|Get an expense by ID|automatic
+CA-REQ-062|get single expense|Get an expense with an invalid expense ID|automatic
+CA-REQ-062|get single expense|Get an expense with an invalid period ID|automatic
+CA-REQ-063|Update an expense|A privileged user updates an expense|automatic
+CA-REQ-063|Update an expense|An unprivileged user updates an expense|automatic
+CA-REQ-063|Update an expense|A request to an invalid allocation period ID is made|automatic
+CA-REQ-063|Update an expense|A request to an invalid expense ID is made|automatic
+CA-REQ-063|Update an expense|A request to a locked allocation period is made|automatic
+CA-REQ-064|Delete an expense|A privileged user deletes an expense|automatic
+CA-REQ-064|Delete an expense|An unprivileged user deletes an expense|automatic
+CA-REQ-064|Delete an expense|A request to an invalid allocation period ID is made|automatic
+CA-REQ-064|Delete an expense|A request to an invalid expense ID is made|automatic
+CA-REQ-064|Delete an expense|A request to a locked allocation period is made|automatic
+CA-REQ-065|Create an activity|A privileged user creates an activity|automatic
+CA-REQ-065|Create an activity|An unprivileged user creates an activity|automatic
+CA-REQ-065|Create an activity|A request to an invalid allocation period ID is made|automatic
+CA-REQ-065|Create an activity|A request to a locked allocation period is made|automatic
+CA-REQ-066|Get all activities|Get a list of activities by allocation period ID|automatic
+CA-REQ-066|Get all activities|Get a list of activities with an invalid allocation period ID|automatic
+CA-REQ-067|Get a single activity by ID|Get an activity by ID|automatic
+CA-REQ-067|Get a single activity by ID|Get an activity with an invalid activity ID|automatic
+CA-REQ-067|Get a single activity by ID|Get an activity with an invalid period ID|automatic
+CA-REQ-068|Update an activity|A privileged user updates an activity|automatic
+CA-REQ-068|Update an activity|An unprivileged user updates an activity|automatic
+CA-REQ-068|Update an activity|A request to an invalid allocation period ID is made|automatic
+CA-REQ-068|Update an activity|A request to an invalid activity ID is made|automatic
+CA-REQ-068|Update an activity|A request to a locked allocation period is made|automatic
+CA-REQ-069|Delete an activity|A privileged user deletes an activity|automatic
+CA-REQ-069|Delete an activity|An unprivileged user deletes an activity|automatic
+CA-REQ-069|Delete an activity|A request to an invalid allocation period ID is made|automatic
+CA-REQ-069|Delete an activity|A request to an invalid activity ID is made|automatic
+CA-REQ-069|Delete an activity|A request to a locked allocation period is made|automatic

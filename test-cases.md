@@ -60,6 +60,10 @@ Feature: Code quality and conformity
         When the statistics on memory are viewed
         Then no memory leaks are found
 
+    Scenario: Large lists of data are paginated
+        When endpoints providing lists of entities are queried
+        Then the lists are paginated by default
+
 Feature: Inline documentation
     Scenario: Logic is robustly documented with inline comments
         When the files are manually reviewed
