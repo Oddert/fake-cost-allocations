@@ -1,15 +1,207 @@
 # Test Cases
 
+## Non-Functional Requirements
+
 Feature: Code quality and conformity
-    TODO
-Feature: SOX compliance
-    TODO
-Feature: ISO/IEC27001 Compliance
-    TODO
-Feature: GDPR Compliance
-    TODO
+    Scenario: No linter violations are present
+        Given the Ruff linting configuration supplied
+        And the linting configuration matches the team's standard
+        When the linter is run in 'check' mode
+        Then no errors are returned
+
+    Scenario: Code conforms to linting style formatters
+        Given the Ruff linting configuration supplied
+        And the linting configuration matches the team's standard
+        When the linter is run in 'format' mode
+        Then the code will be auto-fixed
+        And no additional formatting issues will be reported which must be manually addressed
+
+    Scenario: Type hints are used
+        When the code is manually reviewed
+        Then the all variables without an implicit type have a type annotation
+        And all function arguments have a type annotation
+        And type chains are not interrupted
+        And the annotations are correct against the expected functionality
+
+    Scenario: Type security is robust
+        Given the code is viewed in an IDE with a Pylance plugin
+        And the Pylance type settings are on
+        When the code is viewed
+        Then no type violations are reported
+
+    Scenario: No commented (out) code is present
+        When the code is manually reviewed
+        Then no commented blocks of code are present
+
+    Scenario: Variable names are clear
+        When the code is manually reviewed
+        Then variable names are found to be consistent, readable, and semantic
+
+    Scenario: Static code quality scans yield no unjustified violations
+        Given a static code-quality scanning tool
+        When the scan is run against the codebase
+        Then no errors are reported
+
+    Scenario: Folder structure and code splitting aligns with the team's standard
+        Given the team has a standard method of structuring an API codebase
+        And the team has typical naming conventions for files contained
+        And the team has defined rules about where to place aspects of functionality
+        When the code structure is manually reviewed
+        Then the structure is found to conform
+
+    Scenario: Code complexity is kept as low as possible
+        When the application logic is manually reviewed
+        Then the code is found to perform well against Big O principles
+        And no excessive branching is used
+        And no recursive logic is present
+
+    Scenario: Application memory performance is efficient
+        Given the application is run in an IDE
+        When the statistics on memory are viewed
+        Then no memory leaks are found
+
+Feature: Inline documentation
+    Scenario: Logic is robustly documented with inline comments
+        When the files are manually reviewed
+        Then any sufficiently complex logic is accompanied with explanatory docstrings
+        And the language used is comprehensive but accessible
+        And the comments are found to adequately explain the behaviour of the code
+
+    Scenario: API endpoints are well documented
+        When the API documentation is viewed
+        Then all endpoints have explanatory docstrings
+        And the docstrings explain the function of the endpoint in accessible but robust language
+        And the usage schema's explain the expected request-response formats
+        And the exception conditions are explained
+
+    Scenario: All functions include docstrings
+        When the codebase is manually reviewed
+        Then all functions are found to have a docstring
+        And the docstring provides a comprehensive description of what the function does
+        And the function arguments are described with their expected types
+        And the return value(s) are described
+        And the possible exceptions are listed
+
+    Scenario: Variable names are high quality
+        When the codebase is manually reviewed
+        Then all variable names are found to be consistent, readable, and semantic
+        And no variables are shorter than three characters unless their purpose is immediately apparent
+        And names are relevant to their usage and context
+
+Feature: Static security
+    Scenario: static SAST scans result in no errors
+        Given a static security scanning tool
+        When the scan is run against the codebase
+        Then no errors are reported
+
+    Scenario: Dependency scans result in no issues
+        Given a static dependency scanning tool
+        When the scan is run against the codebase
+        Then no package vulnerabilities are reported
+        And package versions are tightly defined
+        And packages are all recent versions
+
 Feature: OpenAPI linting conformity
-    TODO
+    Scenario: Static linting against OpenAPI standards yields no errors
+        Given a static linting configuration using Spectral is defined
+        And the rulesets are aligned with the team's standards
+        When the scan is run
+        Then no errors are reported
+        And no style violations are reported
+
+Feature: FCA & SOX compliance
+    Scenario: Data held is non proprietary and can be exported to other systems
+        When the data tables are manually reviewed
+        Then the data is found to be of high quality
+        And the table names and column names are clear
+        And anything unclear is explained using comments or another form of documentation
+        And no application-specific data is mixed with financial data
+
+    Scenario: An audit trail allows clear transaction history to be viewed for at least 7 years
+        Given some data exists in the database
+        When the data tables are manually reviewed
+        Then data for the past seven years is visible
+        And there are no gaps in the audit trail
+        And all changes made are recorded and viewable
+        And change history can be 'replayed' by examination of the transaction history
+
+    Scenario: Transaction events are logged and searchable
+        Given some data exists in the database
+        When the transaction history is manually reviewed
+        Then all changes made to the main data tables are recorded and viewable
+        And there are no gaps in the audit trail
+        And change history can be 'replayed' by examination of the transaction history
+
+    Scenario: Data is backed up and secure from tampering and loss
+        When the database is examined
+        Then a backup process is found
+        And the backup is deemed secure
+
+    Scenario: Data is stored on sovereign territories within the same regulatory environment as the bank
+        When the database is examined
+        Then it is found to reside physically and under the jurisdiction of the UK
+
+    Scenario: Security breach events are recorded and reported to SOX auditors
+        When the security logs are viewed
+        Then all breaches are clearly logged and documented
+
+    Scenario: Controls are in place to restrict addition of new users
+        When new users are added to the system
+        Then a clear audit trail, approval and justification is recorded
+
+Feature: ISO/IEC27001 Compliance
+    Scenario: The application passes an audit by a dedicated audit team
+        Given an internal SOX audit team is available
+        When and audit is conducted
+        Then the team reports no failings
+
+    Scenario: The responsibilities and ownership of the system are documented and understood
+        Given roles and responsibilities for positions such as ownership, delivery, retesting, maintenance, and stakeholder management are defined
+        When documentation for the project is read
+        The roles and responsibilities are recorded
+
+    Scenario: All system and data locations are documented
+        When the application stores or accesses data of any kind
+        Then the data sources are accounted for in application documentation
+
+    Scenario: Data access is controlled with RBAC on the principle of least privilege
+        When data is accessed
+        Then access is controlled by specific roles
+
+    Scenario: Data at-rest is encrypted
+        When data is stored
+        Then the data is encrypted securely
+
+    Scenario: All API requests are logged
+        When an API call is made to any endpoint
+        Then the request is logged via an external service
+        And sufficient detail on the nature of the request is retained
+
+    Scenario: No extraneous information is exposed
+        When the endpoints are manually reviewed
+        Then no instances of extraneous information exposure is found
+
+Feature: GDPR Compliance
+    Scenario: No personally identifiable information is stored unless absolutely necessary
+        When the data is manually inspected
+        Then the data is not found to hold any personal identifiable information (PII)
+
+Feature: Database schema compatibility
+    Scenario: Primary key columns are complex and unique strings (UUID)
+        When records are stored in the database
+        Then the primary key column is a unique string in UUID format
+
+    Scenario: Column types are compatible with Oracle data types
+        When the codebase is manually reviewed
+        And its column data types are compared to Oracle database data types
+        Then no incompatibilities are found.
+
+    Scenario: Database actions like transactions are compatible with Oracle
+        When the codebase is manually inspected
+        Then the transaction logic is found to be compatible with Oracle
+        And the method of interacting with the database is found to be efficient
+
+## Functional Requirements
 
 Feature: Protected Endpoints
     Scenario: Unauthenticated user tries to access a protected endpoint
@@ -264,6 +456,11 @@ Feature: Update a cost centre
         When the user submits cost centre details
         Then the cost centre is updated
         And the updated cost centre is returned
+
+    Scenario: A request for a missing cost centre is rejected
+        Given the user holds the "admin" role
+        When the user submits cost centre details to cost centre which does not exist
+        Then the request is rejected with 'not found'
 
     Scenario: An invalid ID is used in an update
         Given the user holds the "admin" role
