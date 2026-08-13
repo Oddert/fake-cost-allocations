@@ -185,3 +185,4 @@ Feature: General Security
     Scenario: Environment variables and configs are securely read in from env files when running in localhost
     Scenario: All database logic is wrapped in at least one exception catch
     Scenario: Exceptions exposed are safe
+    Scenario: Database transactions are abstracted via use of an ORM

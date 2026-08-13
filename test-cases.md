@@ -1181,3 +1181,7 @@ Feature: General Security
         And an error is propagated back to the endpoint
         Then clear explanatory errors are provided
         And no sensitive information is exposed
+
+    Scenario: Database transactions are abstracted via use of an ORM
+        When any interaction with the database takes place
+        Then the transaction is abstracted by using an ORM
