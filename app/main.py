@@ -16,22 +16,20 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
 from uvicorn import run
 
+from app import seed  # runs seed data on import  # noqa: F401
 from app.config import settings
 from app.routers import (
-    actual,
+    # actual,
     auth,
-    budget,
+    # budget,
     reference,
-    step1_assignments,
-    step2_distributions,
-    step3_labels,
-    step4_review,
+    # step1_assignments,
+    # step2_distributions,
+    # step3_labels,
+    # step4_review,
 )
-from app import seed  # runs seed data on import  # noqa: F401
-
 
 # ---------------------------------------------------------------------------
 # Lifespan (startup / shutdown hooks)
@@ -119,12 +117,12 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 app.include_router(auth.router)
 app.include_router(reference.router)
-app.include_router(step1_assignments.router)
-app.include_router(step2_distributions.router)
-app.include_router(step3_labels.router)
-app.include_router(step4_review.router)
-app.include_router(budget.router)
-app.include_router(actual.router)
+# app.include_router(step1_assignments.router)
+# app.include_router(step2_distributions.router)
+# app.include_router(step3_labels.router)
+# app.include_router(step4_review.router)
+# app.include_router(budget.router)
+# app.include_router(actual.router)
 
 
 # ---------------------------------------------------------------------------
