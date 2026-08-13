@@ -75,6 +75,7 @@ CA-REQ-070|Security|Strong CORs controls and other header settings are used|''
 CA-REQ-071|Security|Environment and config variables are securely handled|''
 CA-REQ-072|Security|Exceptions are well handled and provide meaningful, safe information to the end user|manual
 CA-REQ-073|Security|Database transactions are abstracted via use of an ORM|''
+CA-REQ-074|Security|Financial data types are handled safely with regard to integer overflows, floating point errors|''
 
 ## Scenario - Requirement Map
 
@@ -220,3 +221,4 @@ CA-REQ-071|General Security|Environment and config variables are securely handle
 CA-REQ-072|General Security|All database logic is wrapped in at least one exception catch|manual
 CA-REQ-072|General Security|Exceptions exposed are safe|manual
 CA-REQ-073|General Security|Database transactions are abstracted via use of an ORM|manual
+CA-REQ-074|General Security|Safe financial data handling|code review (talk aloud)

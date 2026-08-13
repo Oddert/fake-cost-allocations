@@ -1185,3 +1185,8 @@ Feature: General Security
     Scenario: Database transactions are abstracted via use of an ORM
         When any interaction with the database takes place
         Then the transaction is abstracted by using an ORM
+
+    Scenario: Safe financial data handling
+        When any logic interacts with values representing currency amounts
+        Then the currency values ae calculated safely with regard to integer overflow
+        And the currency values ae calculated safely with regard to floating point errors

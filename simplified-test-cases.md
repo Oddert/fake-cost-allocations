@@ -186,3 +186,4 @@ Feature: General Security
     Scenario: All database logic is wrapped in at least one exception catch
     Scenario: Exceptions exposed are safe
     Scenario: Database transactions are abstracted via use of an ORM
+    Scenario: Safe financial data handling
