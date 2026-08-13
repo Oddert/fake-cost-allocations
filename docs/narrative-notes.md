@@ -24,11 +24,4 @@
 - bandit
 - semgrep
 
-
 Affected packages: python-jose, cryptography, python-multipart, pytest
-
-## TODO
-
-- static security scan
-- static dep scan
-- static openapi scan

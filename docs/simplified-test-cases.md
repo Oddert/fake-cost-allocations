@@ -46,6 +46,15 @@ Feature: Database schema compatibility
     Scenario: Primary key columns are complex and unique strings (UUID)
     Scenario: Column types are compatible with Oracle data types
     Scenario: Database actions like transactions are compatible with Oracle
+Feature: General Security
+    Scenario: Strong header settings are used
+    Scenario: Strong CORs controls are in place
+    Scenario: Environment variables and configs are securely read in from hosting services when hosted
+    Scenario: Environment variables and configs are securely read in from env files when running in localhost
+    Scenario: All database logic is wrapped in at least one exception catch
+    Scenario: Exceptions exposed are safe
+    Scenario: Database transactions are abstracted via use of an ORM
+    Scenario: Safe financial data handling
 
 ## Functional Requirements
 
@@ -178,12 +187,3 @@ Feature: Delete an activity
     Scenario: A request to an invalid allocation period ID is made
     Scenario: A request to an invalid activity ID is made
     Scenario: A request to a locked allocation period is made
-Feature: General Security
-    Scenario: Strong header settings are used
-    Scenario: Strong CORs controls are in place
-    Scenario: Environment variables and configs are securely read in from hosting services when hosted
-    Scenario: Environment variables and configs are securely read in from env files when running in localhost
-    Scenario: All database logic is wrapped in at least one exception catch
-    Scenario: Exceptions exposed are safe
-    Scenario: Database transactions are abstracted via use of an ORM
-    Scenario: Safe financial data handling
