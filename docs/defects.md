@@ -12,6 +12,7 @@ CA-REQ-003|Code uses strong typing|Endpoints in `reference.py` set the user obje
 CA-REQ-003|Code uses strong typing|All DB interactions type their return format as a generic `dict`.
 CA-REQ-003|Code uses strong typing|Multiple instances of API request body's being spread into a dict for database injection, potential injection attack vector
 CA-REQ-003|Code uses strong typing|Allocation periods default their `created_by` field to an integer
+CA-REQ-003|Code uses strong typing|Inbound request validation allows extra parameters to be sent silently
 CA-REQ-005|No unnecessary data is exposed|Health check endpoint reveals quantities of data held including users
 CA-REQ-005|No unnecessary data is exposed|Inclusion of a list users endpoint is a potential GDPR violation
 CA-REQ-005|No unnecessary data is exposed|No controls on viewing legal entities
@@ -36,7 +37,14 @@ CA-REQ-012|Variable names are high quality|API uses snake-case variable names in
 CA-REQ-012|Variable names are high quality|Use of a generic open-period checker function with a default raise condition is ambiguous due to unclear name and usage
 CA-REQ-012|Variable names are high quality|Multiple instances of single-letter variable names
 CA-REQ-012|Variable names are high quality|Multiple instances of generic variable names like `row`, and `rid` (row ID)
+CA-REQ-013|Static security scans are passed|SAST scan reported severity medium: a 'latest' package version is specified in requirements
+CA-REQ-013|Static security scans are passed|SAST scan reported severity low: a wildcard is used in a process spawn config.py ln 12, db.py ln 26, main.py ln 94
 CA-REQ-012|Variable names are high quality|Generic class names such as the singleton class `Settings`, app may use multiple config classes in the future as per other projects
+CA-REQ-014|Dependency scans are passed|Starlette test client is using `httpx` which is deprecated, `httpx2` is required
+CA-REQ-014|Dependency scans are passed|Pytest version is using depricated `asyncio.get_event_loop_policy` slated for removal in Python 3.16
+CA-REQ-014|Dependency scans are passed|Static scanning with Safety yeilded 23 package vulnerabilities, ignored 13 dues to policy, and suggested three fixes to resolve the remainder
+CA-REQ-014|Dependency scans are passed|`jose/jwt` is using deprecated `datetime.datetime.utcnow()`
+CA-REQ-014|Dependency scans are passed|Static scanning with pip-audit yielded 14 vulnerabilities across 5 packages
 CA-REQ-015|Static linting against OpenAPI standards yields no errors|Only some endpoints explicitly list a default response status code
 CA-REQ-017|An audit trail allows clear transaction history to be viewed for at least 7 years|Multiple entities can be deleted with no record of their having existed
 CA-REQ-018|Transaction events are logged and searchable|No records are kept of changes being made
@@ -53,6 +61,8 @@ CA-REQ-029|No extraneous information is exposed|The health check endpoint lists 
 CA-REQ-031|Primary key columns are complex and unique strings (UUID)|Primary key columns are integers
 CA-REQ-033|Database actions like transactions are compatible with Oracle|In some cases database interaction logic is contained in the API endpoint instead of being abstracted. This will be re-written to work cross-platform
 CA-REQ-033|Database actions like transactions are compatible with Oracle|No control on where seeds will run, seed file runs on every restart
+CA-REQ-046|Users can query individual cost centres by ID|Negative integers are accepted as IDs
+CA-REQ-059|Admins can lock an allocation period|Attempts to lock an already locked allocation result in a 400 error
 CA-REQ-070|Strong CORs controls and other header settings are used|CORs headers use wildcards with no restrictions
 CA-REQ-071|Environment and config variables are securely handled|Application has no capacity to read in a credentials service
 CA-REQ-071|Environment and config variables are securely handled|Use of enum types which are not abstracted to a constants file potentially leading to code drift and security control breakdown
