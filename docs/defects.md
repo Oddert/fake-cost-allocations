@@ -46,6 +46,10 @@ CA-REQ-014|Dependency scans are passed|Static scanning with Safety yeilded 23 pa
 CA-REQ-014|Dependency scans are passed|`jose/jwt` is using deprecated `datetime.datetime.utcnow()`
 CA-REQ-014|Dependency scans are passed|Static scanning with pip-audit yielded 14 vulnerabilities across 5 packages
 CA-REQ-015|Static linting against OpenAPI standards yields no errors|Only some endpoints explicitly list a default response status code
+CA-REQ-015|Static linting against OpenAPI standards yields no errors|All endpoints are missing the "description" field (reported 57 times)
+CA-REQ-015|Static linting against OpenAPI standards yields no errors|Tags used are not defined in the global scope (reported 59 times)
+CA-REQ-015|Static linting against OpenAPI standards yields no errors|Key 'info' is missing 'contact'
+CA-REQ-015|Static linting against OpenAPI standards yields no errors|Key 'servers' is not present
 CA-REQ-017|An audit trail allows clear transaction history to be viewed for at least 7 years|Multiple entities can be deleted with no record of their having existed
 CA-REQ-018|Transaction events are logged and searchable|No records are kept of changes being made
 CA-REQ-022|Controls are in place to restrict addition of new users|No approvals are required to justify a new user. No signup reason is recorded
