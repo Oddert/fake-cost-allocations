@@ -1160,3 +1160,24 @@ Feature: General Security
         When an API request is made
         CORs headers are sent defining valid sources
         And the settings on the CORs headers are restrictive
+
+    Scenario: Environment variables and configs are securely read in from hosting services when hosted
+        Given the application is running in a hosted (cloud) environment
+        When the application references any sensitive variables
+        Then the application reads these from a secure credentials store
+
+    Scenario: Environment variables and configs are securely read in from env files when running in localhost
+        Given the application is running on localhost
+        When the application references any sensitive variables
+        Then the application reads these safely from a credentials file excluded from version control
+
+    Scenario: All database logic is wrapped in at least one exception catch
+        When any call to an external service is made
+        And an unexpected exception occurs
+        Then an exception handler allows the application to gracefully fail
+
+    Scenario: Exceptions exposed are safe
+        When any exception is caught
+        And an error is propagated back to the endpoint
+        Then clear explanatory errors are provided
+        And no sensitive information is exposed

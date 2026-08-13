@@ -74,6 +74,8 @@ CA-REQ-067|Activities|Users can query an activity by period ID and activity ID|'
 CA-REQ-068|Activities|Privileged users can update non-critical details on an activity attached to an unlocked allocation period|''
 CA-REQ-069|Activities|Privileged users can delete an activity on an unlocked allocation period|''
 CA-REQ-070|Security|Strong CORs controls and other header settings are used|''
+CA-REQ-071|Security|Environment and config variables are securely handled|''
+CA-REQ-072|Security|Exceptions are well handled and provide meaningful, safe information to the end user|manual
 
 ## Scenario - Requirement Map
 
@@ -215,3 +217,6 @@ CA-REQ-069|Delete an activity|A request to an invalid activity ID is made|automa
 CA-REQ-069|Delete an activity|A request to a locked allocation period is made|automatic
 CA-REQ-070|General Security|Strong header settings are used|manual
 CA-REQ-070|General Security|Strong CORs controls are in place|manual
+CA-REQ-071|General Security|Environment and config variables are securely handled|manual
+CA-REQ-072|General Security|All database logic is wrapped in at least one exception catch|manual
+CA-REQ-072|General Security|Exceptions exposed are safe|manual

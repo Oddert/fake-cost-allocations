@@ -181,3 +181,7 @@ Feature: Delete an activity
 Feature: General Security
     Scenario: Strong header settings are used
     Scenario: Strong CORs controls are in place
+    Scenario: Environment variables and configs are securely read in from hosting services when hosted
+    Scenario: Environment variables and configs are securely read in from env files when running in localhost
+    Scenario: All database logic is wrapped in at least one exception catch
+    Scenario: Exceptions exposed are safe
