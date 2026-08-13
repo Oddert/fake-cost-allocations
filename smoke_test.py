@@ -1,11 +1,11 @@
 """Quick smoke-test script — starts uvicorn in-process, runs checks, exits."""
+import json
 import subprocess
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
-import json
 
 proc = subprocess.Popen(
     [sys.executable, "-m", "uvicorn", "app.main:app", "--port", "8877"],
