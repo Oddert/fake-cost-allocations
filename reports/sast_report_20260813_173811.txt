@@ -1,0 +1,79 @@
+==============================================================================
+  INSOMNIA SAST REPORT
+==============================================================================
+  Project : D:\dev\fake-cost-allocations
+  Scanned : 2026-08-13T17:38:11
+  Findings: 6  CRITICAL=1  HIGH=4  MEDIUM=1
+==============================================================================
+
+[1] [CRITICAL] Vulnerable Dependency: python-jose
+------------------------------------------------------------------------------
+  File          : D:\dev\fake-cost-allocations\venv\Lib\site-packages\python_jose-3.3.0.dist-info
+  All lines     : 0
+  Severity      : critical   Confidence: 0.95   Exploitability: n/a
+  Class / Cat   : vulnerable_dependency / dependencies
+  CWE / OWASP   : CWE-1104 / A06:2021 – Vulnerable and Outdated Components
+  Language      : deps    Occurrences: 1
+  Taint flow    : ?  -->  vulnerable_dependency
+  Description   : python-jose algorithm confusion with OpenSSH ECDSA keys
+  Remediation   : Update to the patched version or remove the package.
+
+[2] [HIGH] Vulnerable Dependency: cryptography
+------------------------------------------------------------------------------
+  File          : D:\dev\fake-cost-allocations\venv\Lib\site-packages\cryptography-49.0.0.dist-info
+  All lines     : 0
+  Severity      : high   Confidence: 0.95   Exploitability: n/a
+  Class / Cat   : vulnerable_dependency / dependencies
+  CWE / OWASP   : CWE-1104 / A06:2021 – Vulnerable and Outdated Components
+  Language      : deps    Occurrences: 1
+  Taint flow    : ?  -->  vulnerable_dependency
+  Description   : cryptography: PKCS#7 EnvelopedData decryption exposes a Bleichenbacher oracle through distinguishable errors and timing
+  Remediation   : Update to the patched version or remove the package.
+
+[3] [HIGH] Vulnerable Dependency: ecdsa
+------------------------------------------------------------------------------
+  File          : D:\dev\fake-cost-allocations\venv\Lib\site-packages\ecdsa-0.19.2.dist-info
+  All lines     : 0
+  Severity      : high   Confidence: 0.95   Exploitability: n/a
+  Class / Cat   : vulnerable_dependency / dependencies
+  CWE / OWASP   : CWE-1104 / A06:2021 – Vulnerable and Outdated Components
+  Language      : deps    Occurrences: 1
+  Taint flow    : ?  -->  vulnerable_dependency
+  Description   : Minerva timing attack on P-256 in python-ecdsa
+  Remediation   : Update to the patched version or remove the package.
+
+[4] [HIGH] Vulnerable Dependency: python-multipart
+------------------------------------------------------------------------------
+  File          : D:\dev\fake-cost-allocations\venv\Lib\site-packages\python_multipart-0.0.20.dist-info
+  All lines     : 0
+  Severity      : high   Confidence: 0.95   Exploitability: n/a
+  Class / Cat   : vulnerable_dependency / dependencies
+  CWE / OWASP   : CWE-1104 / A06:2021 – Vulnerable and Outdated Components
+  Language      : deps    Occurrences: 1
+  Taint flow    : ?  -->  vulnerable_dependency
+  Description   : python-multipart: Quadratic-time querystring parsing with semicolon separators causes CPU denial of service
+  Remediation   : Update to the patched version or remove the package.
+
+[5] [HIGH] Vulnerable Dependency: cost-allocations
+------------------------------------------------------------------------------
+  File          : D:\dev\fake-cost-allocations\venv\Lib\site-packages\cost_allocations-0.1.0.dist-info
+  All lines     : 0
+  Severity      : high   Confidence: 0.95   Exploitability: n/a
+  Class / Cat   : vulnerable_dependency / dependencies
+  CWE / OWASP   : CWE-1104 / A06:2021 – Vulnerable and Outdated Components
+  Language      : deps    Occurrences: 1
+  Taint flow    : ?  -->  vulnerable_dependency
+  Description   : Package missing from public registry (dependency confusion). https://pypi.org/pypi/cost-allocations/json returned 404 (package not on public registry)
+  Remediation   : Update to the patched version or remove the package.
+
+[6] [MEDIUM] Vulnerable Dependency: pytest
+------------------------------------------------------------------------------
+  File          : D:\dev\fake-cost-allocations\venv\Lib\site-packages\pytest-8.4.1.dist-info
+  All lines     : 0
+  Severity      : medium   Confidence: 0.95   Exploitability: n/a
+  Class / Cat   : vulnerable_dependency / dependencies
+  CWE / OWASP   : CWE-1104 / A06:2021 – Vulnerable and Outdated Components
+  Language      : deps    Occurrences: 1
+  Taint flow    : ?  -->  vulnerable_dependency
+  Description   : pytest has vulnerable tmpdir handling
+  Remediation   : Update to the patched version or remove the package.

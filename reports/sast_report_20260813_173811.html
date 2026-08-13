@@ -1,0 +1,1706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAST Report — fake-cost-allocations</title>
+<style>
+/* ============================================================
+   Reset & Variables
+   ============================================================ */
+:root {
+  --accent: #7c3aed;
+  --accent-light: #ede9fe;
+  --accent-dark: #5b21b6;
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+  --border: #e2e8f0;
+  --border-focus: #7c3aed;
+  --sev-critical: #dc2626;
+  --sev-high: #ea580c;
+  --sev-medium: #ca8a04;
+  --sev-low: #2563eb;
+  --sev-info: #64748b;
+  --success: #16a34a;
+  --error: #dc2626;
+  --warning: #b45309;
+  --nav-w: 220px;
+  --header-h: 200px;
+}
+*,*::before,*::after { box-sizing: border-box }
+html { scroll-behavior: smooth }
+body {
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  font-size: 14px;
+}
+a { color: var(--accent); text-decoration: none }
+a:hover { text-decoration: underline }
+h1,h2,h3,h4 { margin: 0 0 .5em; font-weight: 700 }
+code { font-family: 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace }
+
+/* ============================================================
+   Header — Gradient + Mesh Pattern
+   ============================================================ */
+.report-header {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 40%, #a855f7 100%);
+  color: #fff;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+.report-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255,255,255,0.06) 0%, transparent 40%),
+    radial-gradient(circle at 60% 80%, rgba(255,255,255,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 32px 0;
+  position: relative;
+  z-index: 1;
+}
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.brand-logo {
+  width: 64px; height: 64px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.14);
+  padding: 6px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+  flex-shrink: 0;
+}
+.brand-logo-svg { padding: 0; background: transparent; box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+/* Collapsible sections — used to fold Entry Points, Frameworks, raw
+ * finding metadata, and any other dense block that would otherwise
+ * push real content below the fold on first paint. */
+details.foldable {
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fafafa;
+}
+details.foldable > summary {
+  cursor: pointer;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: .92rem;
+  color: var(--text-primary, #1e293b);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+details.foldable > summary::-webkit-details-marker { display: none; }
+details.foldable > summary::before {
+  content: "›";
+  display: inline-block;
+  transition: transform .15s ease;
+  font-size: 1.05rem;
+  color: var(--accent, #7c3aed);
+  transform: rotate(0deg);
+}
+details.foldable[open] > summary::before { transform: rotate(90deg); }
+details.foldable > summary .summary-count {
+  margin-left: auto;
+  background: var(--accent, #7c3aed);
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+details.foldable > .foldable-body {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--border);
+  background: #ffffff;
+  border-radius: 0 0 8px 8px;
+}
+.brand-text { display: flex; flex-direction: column; }
+.header-brand h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-mark {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.18);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.22);
+  vertical-align: middle;
+}
+.header-brand .subtitle {
+  font-size: .95rem;
+  opacity: .8;
+  font-weight: 400;
+}
+.header-meta {
+  text-align: right;
+  font-size: .85rem;
+  opacity: .8;
+  line-height: 1.7;
+}
+.header-stats {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+  padding-bottom: 24px;
+}
+@media (max-width: 880px) { .header-stats { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 460px) { .header-stats { grid-template-columns: repeat(2, 1fr); } }
+.stat-card {
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 12px;
+  padding: 12px 8px;
+  text-align: center;
+  transition: transform .2s, background .2s;
+  min-width: 0;
+}
+.stat-card:hover { transform: translateY(-2px); background: rgba(255,255,255,0.18) }
+.stat-card .stat-num {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.stat-card .stat-label {
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  opacity: .7;
+  margin-top: 4px;
+}
+
+/* ============================================================
+   Sidebar Navigation
+   ============================================================ */
+.side-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--nav-w);
+  height: 100vh;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  overflow-y: auto;
+  z-index: 100;
+  transform: translateX(-100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.side-nav.open { transform: translateX(0) }
+.side-nav .nav-header {
+  padding: 0 16px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+  font-weight: 700;
+  font-size: .85rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+.side-nav a {
+  display: block;
+  padding: 8px 16px 8px 20px;
+  color: var(--text-muted);
+  font-size: .82rem;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: all .15s;
+}
+.side-nav a:hover,
+.side-nav a.active {
+  color: var(--accent);
+  background: var(--accent-light);
+  border-left-color: var(--accent);
+  text-decoration: none;
+}
+.nav-toggle {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  font-size: 16px;
+  line-height: 1;
+  transition: background .15s;
+}
+.nav-toggle:hover { background: var(--accent-light) }
+.nav-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.3);
+  z-index: 90;
+}
+.nav-overlay.show { display: block }
+
+/* ============================================================
+   Main content
+   ============================================================ */
+.main-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 32px 64px;
+}
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.02);
+  transition: box-shadow .2s;
+}
+.card:hover { box-shadow: 0 2px 6px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.04) }
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--accent-light);
+}
+.card-header h2 {
+  font-size: 1.15rem;
+  color: var(--text);
+  margin: 0;
+}
+.card-header .card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Grade gauge
+   ============================================================ */
+.gauge-container {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  margin-bottom: 20px;
+}
+.gauge-ring {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+}
+.gauge-ring svg { width: 100%; height: 100% }
+.gauge-letter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  font-weight: 800;
+}
+.gauge-info .gauge-label {
+  font-size: .82rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.gauge-info .gauge-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+/* ============================================================
+   Metric tiles (executive summary)
+   ============================================================ */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.metric-tile {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  transition: transform .15s;
+}
+.metric-tile:hover { transform: translateY(-1px) }
+.metric-tile .num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.metric-tile .lbl {
+  font-size: .75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  margin-top: 4px;
+}
+
+/* ============================================================
+   Severity pills
+   ============================================================ */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: .72rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+.pill-critical { background: var(--sev-critical) }
+.pill-high { background: var(--sev-high) }
+.pill-medium { background: var(--sev-medium) }
+.pill-low { background: var(--sev-low) }
+.pill-info { background: var(--sev-info) }
+
+/* ============================================================
+   Tables
+   ============================================================ */
+table { width: 100%; border-collapse: collapse; font-size: .85rem }
+th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--bg);
+  color: var(--text);
+  border-bottom: 2px solid var(--border);
+  font-weight: 700;
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+td { padding: 10px 14px; border-bottom: 1px solid var(--border) }
+tr:hover td { background: #f8fafc }
+tbody tr { transition: background .1s }
+
+/* ============================================================
+   Progress / bar tracks
+   ============================================================ */
+.bar-track {
+  background: var(--border);
+  border-radius: 6px;
+  height: 22px;
+  overflow: hidden;
+  position: relative;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width .6s cubic-bezier(.4,0,.2,1);
+}
+.bar-label {
+  position: absolute;
+  right: 8px;
+  top: 0;
+  line-height: 22px;
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* ============================================================
+   Code blocks
+   ============================================================ */
+.code-block {
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  overflow-x: auto;
+  font-family: 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace;
+  font-size: .8rem;
+  line-height: 1.65;
+  white-space: pre;
+  color: var(--text);
+  counter-reset: line;
+}
+.code-block .line-num {
+  display: inline-block;
+  width: 38px;
+  color: var(--text-dim);
+  text-align: right;
+  margin-right: 14px;
+  user-select: none;
+  font-size: .75rem;
+}
+.code-block .highlight-line {
+  background: #fef3c7;
+  display: block;
+  margin: 0 -18px;
+  padding: 0 18px;
+  border-left: 3px solid var(--sev-medium);
+}
+
+/* ============================================================
+   Taint flow
+   ============================================================ */
+.taint-flow {
+  margin: 12px 0;
+  padding-left: 20px;
+  border-left: 3px solid var(--accent);
+}
+.taint-step { margin-bottom: 8px }
+.taint-step .step-label {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.taint-step .step-loc { font-size: .82rem; color: var(--text-muted) }
+.taint-step .step-code {
+  font-family: monospace;
+  font-size: .82rem;
+  background: var(--bg);
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+/* ============================================================
+   Collapsible details
+   ============================================================ */
+details { margin-bottom: 12px }
+details summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background .15s, border-color .15s;
+  font-size: .9rem;
+}
+details summary::-webkit-details-marker { display: none }
+details summary:hover { background: var(--accent-light); border-color: var(--accent) }
+details summary::before {
+  content: '\25B6';
+  font-size: .65rem;
+  transition: transform .2s;
+  color: var(--accent);
+}
+details[open] summary::before { transform: rotate(90deg) }
+details[open] summary {
+  border-radius: 10px 10px 0 0;
+  border-bottom-color: transparent;
+}
+details .detail-body {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  background: var(--card);
+}
+
+/* ============================================================
+   Charts row
+   ============================================================ */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+@media(max-width:768px) { .charts-row { grid-template-columns: 1fr } }
+
+/* ============================================================
+   Search box
+   ============================================================ */
+.search-box {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: .9rem;
+  background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z'/%3E%3C/svg%3E") no-repeat 12px center;
+  outline: none;
+  transition: border-color .2s;
+  color: var(--text);
+}
+.search-box:focus { border-color: var(--accent) }
+.search-box::placeholder { color: var(--text-dim) }
+
+/* ============================================================
+   Back to top
+   ============================================================ */
+.back-to-top {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(124,58,237,.35);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity .3s, transform .3s;
+  z-index: 200;
+  border: none;
+}
+.back-to-top.visible { opacity: 1; transform: translateY(0) }
+.back-to-top:hover { background: var(--accent-dark) }
+
+/* ============================================================
+   Finding item
+   ============================================================ */
+.finding-item {
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  animation: fadeIn .3s ease;
+}
+.finding-item:last-child { border-bottom: none; margin-bottom: 0 }
+.finding-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.finding-title strong { font-size: .95rem }
+.finding-meta {
+  font-size: .82rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.finding-meta code {
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: var(--text);
+  font-size: .8rem;
+}
+
+/* ============================================================
+   Confirmed/potential badges
+   ============================================================ */
+.badge-confirmed {
+  background: var(--sev-critical);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+.badge-potential {
+  background: #f59e0b;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+.badge-validated {
+  background: #2563eb;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+.badge-ai-fp {
+  background: #64748b;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .3px;
+  text-decoration: line-through;
+}
+
+/* ============================================================
+   Exploitation / CLI blocks
+   ============================================================ */
+.exploit-block {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border-left: 3px solid;
+}
+.exploit-block.exploit-steps {
+  background: #fef2f2;
+  border-left-color: var(--sev-critical);
+}
+.exploit-block.exploit-cli {
+  background: #f0f9ff;
+  border-left-color: #0ea5e9;
+}
+.exploit-block .exploit-label {
+  font-weight: 700;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 6px;
+}
+.exploit-block.exploit-steps .exploit-label { color: var(--sev-critical) }
+.exploit-block.exploit-cli .exploit-label { color: #0369a1 }
+.exploit-block pre {
+  margin: 0;
+  font-size: .82rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  font-family: 'Cascadia Code', Consolas, monospace;
+}
+
+/* ============================================================
+   Matched pattern
+   ============================================================ */
+.match-block {
+  margin: 8px 0;
+}
+.match-block .match-label {
+  font-weight: 700;
+  font-size: .68rem;
+  color: var(--sev-critical);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin-bottom: 4px;
+}
+.match-block code {
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: .82rem;
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #fecaca;
+}
+
+/* ============================================================
+   Source-sink flow block
+   ============================================================ */
+.flow-block {
+  margin: 14px 0;
+  padding: 14px;
+  background: #fefce8;
+  border: 1px solid #fde047;
+  border-radius: 10px;
+}
+.flow-block .flow-badge { margin-bottom: 10px }
+.flow-arrow {
+  text-align: center;
+  color: var(--sev-critical);
+  font-weight: 800;
+  font-size: .85rem;
+  margin: 6px 0;
+  letter-spacing: 2px;
+}
+.flow-label {
+  font-size: .78rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.flow-label.source { color: var(--warning) }
+.flow-label.sink { color: var(--sev-critical) }
+
+/* ============================================================
+   Footer
+   ============================================================ */
+.report-footer {
+  text-align: center;
+  padding: 28px;
+  font-size: .8rem;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  margin-top: 40px;
+  background: var(--card);
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px) }
+  to { opacity: 1; transform: translateY(0) }
+}
+.card { animation: fadeIn .4s ease }
+
+/* ============================================================
+   Edit Toolbar
+   ============================================================ */
+.edit-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  color: #fff;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.25);
+  transform: translateY(-100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  font-size: .85rem;
+}
+.edit-toolbar.active { transform: translateY(0) }
+.edit-toolbar .edit-label {
+  font-weight: 700;
+  font-size: .82rem;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: #c4b5fd;
+  margin-right: 8px;
+}
+.edit-toolbar button {
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.2);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: .8rem;
+  font-weight: 600;
+  transition: background .15s;
+}
+.edit-toolbar button:hover { background: rgba(255,255,255,.22) }
+.edit-toolbar button.btn-save {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.edit-toolbar button.btn-save:hover { background: var(--accent-dark) }
+.edit-toolbar button.btn-danger {
+  background: var(--sev-critical);
+  border-color: var(--sev-critical);
+}
+.edit-toolbar button.btn-danger:hover { background: #b91c1c }
+.edit-toolbar .spacer { flex: 1 }
+.edit-toolbar .edit-status {
+  font-size: .78rem;
+  color: #a5b4fc;
+}
+
+/* Edit mode highlights */
+body.edit-mode .finding-item {
+  position: relative;
+  border: 1px dashed transparent;
+  border-radius: 8px;
+  padding: 12px;
+  transition: border-color .15s, background .15s;
+}
+body.edit-mode .finding-item:hover {
+  border-color: var(--accent);
+  background: #faf5ff;
+}
+body.edit-mode .finding-item .edit-actions {
+  display: flex !important;
+}
+.finding-item .edit-actions {
+  display: none;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  gap: 4px;
+}
+.edit-actions button {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 600;
+  transition: all .15s;
+  color: var(--text-muted);
+}
+.edit-actions button:hover { border-color: var(--accent); color: var(--accent) }
+.edit-actions button.btn-del { color: var(--sev-critical) }
+.edit-actions button.btn-del:hover { background: #fef2f2; border-color: var(--sev-critical) }
+body.edit-mode [contenteditable="true"] {
+  outline: 2px dashed var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+  padding: 2px 4px;
+  min-height: 1.2em;
+}
+body.edit-mode [contenteditable="true"]:focus {
+  outline-color: var(--accent-dark);
+  background: #faf5ff;
+}
+.analyst-note {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: #faf5ff;
+  border: 1px solid #c4b5fd;
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+}
+.analyst-note .note-label {
+  font-weight: 700;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.analyst-note .note-text {
+  font-size: .85rem;
+  color: var(--text);
+  min-height: 1.5em;
+}
+.deleted-finding {
+  opacity: .35;
+  text-decoration: line-through;
+  pointer-events: none;
+}
+
+/* Severity selector in edit mode */
+.sev-select {
+  display: none;
+  background: var(--card);
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  padding: 4px;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+}
+body.edit-mode .sev-select { display: inline-block }
+
+/* ============================================================
+   Print
+   ============================================================ */
+@media print {
+  body { font-size: 11px; background: #fff }
+  .report-header { background: #7c3aed !important; -webkit-print-color-adjust: exact; print-color-adjust: exact }
+  .side-nav, .nav-toggle, .nav-overlay, .back-to-top, .search-box, .edit-toolbar, .edit-actions, .sev-select { display: none !important }
+  .card { break-inside: avoid; box-shadow: none; border: 1px solid #ccc }
+  details { break-inside: avoid }
+  details[open] summary ~ * { break-inside: avoid }
+  .main-content { padding: 0 16px }
+  .stat-card { background: rgba(255,255,255,.2) !important }
+  .deleted-finding { display: none !important }
+  body.edit-mode .finding-item { border: none; padding: 0 }
+  body.edit-mode [contenteditable="true"] { outline: none }
+}
+</style>
+</head>
+<body>
+<header class="report-header">
+<div class="header-inner">
+  <div class="header-top">
+    <div class="header-brand">
+      <svg class="brand-logo brand-logo-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-label="Insomnia"><defs><linearGradient id="igrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="14" fill="url(#igrad)"/><path d="M22 18 L42 18 L42 22 L34 22 L34 42 L42 42 L42 46 L22 46 L22 42 L30 42 L30 22 L22 22 Z" fill="#ffffff"/><circle cx="48" cy="20" r="3" fill="#fbbf24"/></svg>
+      <div class="brand-text">
+        <h1>SAST Report <span class="brand-mark">Insomnia</span></h1>
+        <div class="subtitle">Project: fake-cost-allocations</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      Generated: 2026-08-13 17:38:11<br>
+      Engine: Insomnia SAST<br>
+      44 files · 8,205 LOC
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-card">
+      <div class="stat-num" data-count="6">6</div>
+      <div class="stat-label">Total Findings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#fca5a5" data-count="1">1</div>
+      <div class="stat-label">Critical</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#fdba74" data-count="4">4</div>
+      <div class="stat-label">High</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#fde68a" data-count="1">1</div>
+      <div class="stat-label">Medium</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#93c5fd" data-count="0">0</div>
+      <div class="stat-label">Low</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">3.0s</div>
+      <div class="stat-label">Scan Time</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#16a34a" data-count="0">0</div>
+      <div class="stat-label">Exploits Crafted</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#64748b" data-count="7">7</div>
+      <div class="stat-label">FPs Filtered</div>
+    </div>
+  </div>
+</div>
+</header>
+<button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation">☰</button>
+<div class="nav-overlay" onclick="toggleNav()"></div>
+<nav class="side-nav" id="sideNav">
+  <div class="nav-header">Contents</div>
+  <a href="#executive-summary">Executive Summary</a>
+  <a href="#project-profile">Project Profile</a>
+  <a href="#severity-chart">Severity Distribution</a>
+  <a href="#owasp-chart">OWASP Top 10</a>
+  <a href="#language-chart">Languages</a>
+  <a href="#top-files">Hotspot Files</a>
+  <a href="#findings-table">Findings Table</a>
+  <a href="#findings">Detailed Findings</a>
+  <a href="#compliance">Compliance</a>
+  <a href="#definitions">Glossary</a>
+  <div style="border-top:1px solid #e2e8f0;margin:12px 0"></div>
+  <a href="#" onclick="toggleEditMode();return false" id="editModeLink" style="color:#7c3aed;font-weight:700"> Edit Report</a>
+</nav>
+<div class="edit-toolbar" id="editToolbar">
+  <span class="edit-label"> Edit Mode</span>
+  <button onclick="undoLastAction()">Undo</button>
+  <button onclick="addGlobalNote()">+ Add Note</button>
+  <button onclick="expandAllFindings()">Expand All</button>
+  <button onclick="collapseAllFindings()">Collapse All</button>
+  <span class="spacer"></span>
+  <span class="edit-status" id="editStatus">Click findings to edit • Changes are saved when you export</span>
+  <button onclick="exportEditedReport()" class="btn-save">Export Edited HTML</button>
+  <button onclick="window.print()" class="btn-save" style="background:#2563eb">Print / PDF</button>
+  <button onclick="toggleEditMode()" class="btn-danger">Exit Edit Mode</button>
+</div>
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0})" aria-label="Back to top">↑</button>
+<main class="main-content">
+<section class="card" id="executive-summary">
+<div class="card-header">
+  <h2>Executive Summary</h2>
+</div>
+<div class="gauge-container">
+  <div class="gauge-ring">
+    <svg viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="42" fill="none" stroke="#e2e8f0" stroke-width="8"/>
+      <circle cx="50" cy="50" r="42" fill="none" stroke="#ea580c" stroke-width="8"
+        stroke-dasharray="105.6 158.3"
+        stroke-dashoffset="66.0"
+        stroke-linecap="round"
+        style="transition: stroke-dasharray .8s ease"/>
+    </svg>
+    <div class="gauge-letter" style="color:#ea580c">D</div>
+  </div>
+  <div class="gauge-info">
+    <div class="gauge-label">Security Rating</div>
+    <div class="gauge-value" style="color:#ea580c">Poor</div>
+    <div style="font-size:.82rem;color:var(--text-muted);margin-top:4px">
+      0.73 findings / 1k LOC &middot; 0 confirmed &middot; 6 potential
+    </div>
+  </div>
+</div>
+<div class="metrics">
+  <div class="metric-tile"><div class="num" style="color:var(--sev-critical)">0</div><div class="lbl">Confirmed</div></div>
+  <div class="metric-tile"><div class="num" style="color:#f59e0b">6</div><div class="lbl">Potential</div></div>
+  
+  
+  
+  <div class="metric-tile"><div class="num">44</div><div class="lbl">Files Scanned</div></div>
+  <div class="metric-tile"><div class="num">8,205</div><div class="lbl">Lines of Code</div></div>
+  <div class="metric-tile"><div class="num">0.73</div><div class="lbl">Density / 1k LOC</div></div>
+</div>
+</section>
+<section class="card" id="project-profile">
+<div class="card-header">
+  <h2>Project Profile</h2>
+</div>
+
+<div class="metrics" style="margin-bottom:20px">
+  <div class="metric-tile"><div class="num">44</div><div class="lbl">Files</div></div>
+  <div class="metric-tile"><div class="num">8,205</div><div class="lbl">Lines of Code</div></div>
+  <div class="metric-tile"><div class="num">0.4</div><div class="lbl">Size (MB)</div></div>
+  <div class="metric-tile"><div class="num" style="color:var(--accent)">Python</div><div class="lbl">Primary Language</div></div>
+  <div class="metric-tile"><div class="num">13</div><div class="lbl">Test Files</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+  <div>
+    <details class="foldable" open>
+      <summary>Languages</summary>
+      <div class="foldable-body">
+        <table><thead><tr><th>Language</th><th style="text-align:right">Files</th>
+        <th style="text-align:right">LOC</th><th>Distribution</th></tr></thead>
+        <tbody><tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3572A5;margin-right:8px;vertical-align:middle"></span><strong>Python</strong></td><td style="text-align:right">18</td><td style="text-align:right">5,355</td><td style="width:40%"><div class="bar-track"><div class="bar-fill" style="width:65.3%;background:#3572A5"></div><span class="bar-label">65.3%</span></div></td></tr>
+<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#cb171e;margin-right:8px;vertical-align:middle"></span><strong>Yaml</strong></td><td style="text-align:right">11</td><td style="text-align:right">211</td><td style="width:40%"><div class="bar-track"><div class="bar-fill" style="width:2.6%;background:#cb171e"></div><span class="bar-label">2.6%</span></div></td></tr>
+<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#7c3aed;margin-right:8px;vertical-align:middle"></span><strong>Dotenv</strong></td><td style="text-align:right">1</td><td style="text-align:right">24</td><td style="width:40%"><div class="bar-track"><div class="bar-fill" style="width:0.3%;background:#7c3aed"></div><span class="bar-label">0.3%</span></div></td></tr>
+<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#292929;margin-right:8px;vertical-align:middle"></span><strong>Json</strong></td><td style="text-align:right">1</td><td style="text-align:right">15</td><td style="width:40%"><div class="bar-track"><div class="bar-fill" style="width:0.2%;background:#292929"></div><span class="bar-label">0.2%</span></div></td></tr>
+<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#7c3aed;margin-right:8px;vertical-align:middle"></span><strong>Pyproject</strong></td><td style="text-align:right">1</td><td style="text-align:right">30</td><td style="width:40%"><div class="bar-track"><div class="bar-fill" style="width:0.4%;background:#7c3aed"></div><span class="bar-label">0.4%</span></div></td></tr>
+<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#7c3aed;margin-right:8px;vertical-align:middle"></span><strong>Toml</strong></td><td style="text-align:right">1</td><td style="text-align:right">77</td><td style="width:40%"><div class="bar-track"><div class="bar-fill" style="width:0.9%;background:#7c3aed"></div><span class="bar-label">0.9%</span></div></td></tr>
+<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#701516;margin-right:8px;vertical-align:middle"></span><strong>Ruby</strong></td><td style="text-align:right">1</td><td style="text-align:right">79</td><td style="width:40%"><div class="bar-track"><div class="bar-fill" style="width:1.0%;background:#701516"></div><span class="bar-label">1.0%</span></div></td></tr>
+</tbody></table>
+      </div>
+    </details>
+  </div>
+  <div>
+    <details class="foldable">
+      <summary>Infrastructure</summary>
+      <div class="foldable-body"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px"><span style="display:inline-flex;align-items:center;gap:5px;background:#f0503214;border:1px solid #f0503230;border-radius:6px;padding:4px 12px;font-size:.82rem"><span style="width:7px;height:7px;border-radius:50%;background:#f05032"></span><strong style="color:#f05032">Git</strong></span></div></div>
+    </details>
+    <details class="foldable">
+      <summary>Frameworks</summary>
+      <div class="foldable-body"><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px"><span style="background:var(--accent-light);border:1px solid #c4b5fd;border-radius:6px;padding:4px 12px;font-size:.82rem;color:var(--accent);font-weight:600">FastAPI</span></div></div>
+    </details>
+    <details class="foldable">
+      <summary>Dependencies</summary>
+      <div class="foldable-body"><table><thead><tr><th>File</th><th>Package Manager</th></tr></thead><tbody><tr><td><span style="display:inline-flex;align-items:center;gap:6px"><span style="background:#3572A5;color:#fff;padding:1px 6px;border-radius:3px;font-size:.68rem;font-weight:700">POETRY</span><code style="font-size:.82rem">pyproject.toml</code></span></td><td>poetry/pip</td></tr>
+</tbody></table></div>
+    </details>
+    <details class="foldable">
+      <summary>Entry Points <span class="summary-count">1</span></summary>
+      <div class="foldable-body"><div style="margin-top:4px"><code style="display:inline-block;background:#f1f5f9;border:1px solid var(--border);border-radius:5px;padding:3px 8px;margin:2px;font-size:.78rem">app\main.py</code></div></div>
+    </details>
+  </div>
+</div>
+</section>
+<div class="charts-row">
+<div class="card" id="severity-chart">
+<div class="card-header">
+  <h2>Severity Distribution</h2>
+</div>
+<svg viewBox="0 0 320 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:320px;height:auto">
+<circle cx="110" cy="110" r="85" fill="none" stroke="#e2e8f0" stroke-width="28"/>
+<circle cx="110" cy="110" r="85" fill="none" stroke="#dc2626" stroke-width="28" stroke-dasharray="89.01 445.06" stroke-dashoffset="133.52" stroke-linecap="butt" style="transition: stroke-dasharray .6s ease"><title>Critical: 1 (16.7%)</title></circle>
+<circle cx="110" cy="110" r="85" fill="none" stroke="#ea580c" stroke-width="28" stroke-dasharray="356.05 178.02" stroke-dashoffset="44.51" stroke-linecap="butt" style="transition: stroke-dasharray .6s ease"><title>High: 4 (66.7%)</title></circle>
+<circle cx="110" cy="110" r="85" fill="none" stroke="#ca8a04" stroke-width="28" stroke-dasharray="89.01 445.06" stroke-dashoffset="-311.54" stroke-linecap="butt" style="transition: stroke-dasharray .6s ease"><title>Medium: 1 (16.7%)</title></circle>
+<text x="110" y="102" text-anchor="middle" font-size="28" font-weight="800" fill="#1e293b" font-family="sans-serif">6</text><text x="110" y="124" text-anchor="middle" font-size="11" fill="#64748b" font-family="sans-serif">FINDINGS</text>
+<circle cx="14" cy="240" r="5" fill="#dc2626"/><text x="24" y="244" font-size="11" fill="#334155" font-family="sans-serif" font-weight="600">Critical</text><text x="24" y="256" font-size="10" fill="#64748b" font-family="sans-serif">1 (16.7%)</text>
+<circle cx="94" cy="240" r="5" fill="#ea580c"/><text x="104" y="244" font-size="11" fill="#334155" font-family="sans-serif" font-weight="600">High</text><text x="104" y="256" font-size="10" fill="#64748b" font-family="sans-serif">4 (66.7%)</text>
+<circle cx="174" cy="240" r="5" fill="#ca8a04"/><text x="184" y="244" font-size="11" fill="#334155" font-family="sans-serif" font-weight="600">Medium</text><text x="184" y="256" font-size="10" fill="#64748b" font-family="sans-serif">1 (16.7%)</text>
+</svg>
+</div>
+<div class="card" id="owasp-chart">
+<div class="card-header">
+  <h2>OWASP Top 10 (2021)</h2>
+</div>
+<svg viewBox="0 0 600 376" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+<text x="4" y="27" font-size="11.5" fill="#94a3b8" font-family="sans-serif" font-weight="400">A01: Broken Access Control</text><rect x="260" y="13" width="2.0" height="20" rx="4" fill="#e2e8f0" opacity="0.85"/><text x="270.0" y="27" font-size="12" fill="#94a3b8" font-family="sans-serif" font-weight="700">0</text>
+<text x="4" y="63" font-size="11.5" fill="#94a3b8" font-family="sans-serif" font-weight="400">A02: Cryptographic Failures</text><rect x="260" y="49" width="2.0" height="20" rx="4" fill="#e2e8f0" opacity="0.85"/><text x="270.0" y="63" font-size="12" fill="#94a3b8" font-family="sans-serif" font-weight="700">0</text>
+<text x="4" y="99" font-size="11.5" fill="#94a3b8" font-family="sans-serif" font-weight="400">A03: Injection</text><rect x="260" y="85" width="2.0" height="20" rx="4" fill="#e2e8f0" opacity="0.85"/><text x="270.0" y="99" font-size="12" fill="#94a3b8" font-family="sans-serif" font-weight="700">0</text>
+<text x="4" y="135" font-size="11.5" fill="#94a3b8" font-family="sans-serif" font-weight="400">A04: Insecure Design</text><rect x="260" y="121" width="2.0" height="20" rx="4" fill="#e2e8f0" opacity="0.85"/><text x="270.0" y="135" font-size="12" fill="#94a3b8" font-family="sans-serif" font-weight="700">0</text>
+<text x="4" y="171" font-size="11.5" fill="#94a3b8" font-family="sans-serif" font-weight="400">A05: Security Misconfiguration</text><rect x="260" y="157" width="2.0" height="20" rx="4" fill="#e2e8f0" opacity="0.85"/><text x="270.0" y="171" font-size="12" fill="#94a3b8" font-family="sans-serif" font-weight="700">0</text>
+<text x="4" y="207" font-size="11.5" fill="#334155" font-family="sans-serif" font-weight="600">A06: Vulnerable &amp; Outdated Components</text><rect x="260" y="193" width="280.0" height="20" rx="4" fill="var(--accent)" opacity="0.85"/><text x="548.0" y="207" font-size="12" fill="#334155" font-family="sans-serif" font-weight="700">6</text>
+<text x="4" y="243" font-size="11.5" fill="#94a3b8" font-family="sans-serif" font-weight="400">A07: Identification &amp; Authentication Failures</text><rect x="260" y="229" width="2.0" height="20" rx="4" fill="#e2e8f0" opacity="0.85"/><text x="270.0" y="243" font-size="12" fill="#94a3b8" font-family="sans-serif" font-weight="700">0</text>
+<text x="4" y="279" font-size="11.5" fill="#94a3b8" font-family="sans-serif" font-weight="400">A08: Software &amp; Data Integrity Failures</text><rect x="260" y="265" width="2.0" height="20" rx="4" fill="#e2e8f0" opacity="0.85"/><text x="270.0" y="279" font-size="12" fill="#94a3b8" font-family="sans-serif" font-weight="700">0</text>
+<text x="4" y="315" font-size="11.5" fill="#94a3b8" font-family="sans-serif" font-weight="400">A09: Security Logging &amp; Monitoring Failures</text><rect x="260" y="301" width="2.0" height="20" rx="4" fill="#e2e8f0" opacity="0.85"/><text x="270.0" y="315" font-size="12" fill="#94a3b8" font-family="sans-serif" font-weight="700">0</text>
+<text x="4" y="351" font-size="11.5" fill="#94a3b8" font-family="sans-serif" font-weight="400">A10: Server-Side Request Forgery</text><rect x="260" y="337" width="2.0" height="20" rx="4" fill="#e2e8f0" opacity="0.85"/><text x="270.0" y="351" font-size="12" fill="#94a3b8" font-family="sans-serif" font-weight="700">0</text>
+</svg>
+</div>
+</div>
+<section class="card" id="language-chart">
+<div class="card-header">
+  <h2>Language Breakdown</h2>
+</div>
+<svg viewBox="0 0 600 254" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+<text x="4" y="25" font-size="12" fill="#334155" font-family="sans-serif" font-weight="600">Python</text><rect x="130" y="11" width="370.0" height="20" rx="5" fill="#3572A5" opacity="0.85"/><text x="508.0" y="25" font-size="11" fill="#64748b" font-family="sans-serif">18 (52.9%)</text>
+<text x="4" y="59" font-size="12" fill="#334155" font-family="sans-serif" font-weight="600">Yaml</text><rect x="130" y="45" width="226.1" height="20" rx="5" fill="#cb171e" opacity="0.85"/><text x="364.1" y="59" font-size="11" fill="#64748b" font-family="sans-serif">11 (32.4%)</text>
+<text x="4" y="93" font-size="12" fill="#334155" font-family="sans-serif" font-weight="600">Dotenv</text><rect x="130" y="79" width="20.6" height="20" rx="5" fill="#7c3aed" opacity="0.85"/><text x="158.6" y="93" font-size="11" fill="#64748b" font-family="sans-serif">1 (2.9%)</text>
+<text x="4" y="127" font-size="12" fill="#334155" font-family="sans-serif" font-weight="600">Json</text><rect x="130" y="113" width="20.6" height="20" rx="5" fill="#292929" opacity="0.85"/><text x="158.6" y="127" font-size="11" fill="#64748b" font-family="sans-serif">1 (2.9%)</text>
+<text x="4" y="161" font-size="12" fill="#334155" font-family="sans-serif" font-weight="600">Pyproject</text><rect x="130" y="147" width="20.6" height="20" rx="5" fill="#7c3aed" opacity="0.85"/><text x="158.6" y="161" font-size="11" fill="#64748b" font-family="sans-serif">1 (2.9%)</text>
+<text x="4" y="195" font-size="12" fill="#334155" font-family="sans-serif" font-weight="600">Toml</text><rect x="130" y="181" width="20.6" height="20" rx="5" fill="#7c3aed" opacity="0.85"/><text x="158.6" y="195" font-size="11" fill="#64748b" font-family="sans-serif">1 (2.9%)</text>
+<text x="4" y="229" font-size="12" fill="#334155" font-family="sans-serif" font-weight="600">Ruby</text><rect x="130" y="215" width="20.6" height="20" rx="5" fill="#701516" opacity="0.85"/><text x="158.6" y="229" font-size="11" fill="#64748b" font-family="sans-serif">1 (2.9%)</text>
+</svg>
+</section>
+<section class="card" id="top-files">
+<div class="card-header">
+  <h2>Hotspot Files</h2>
+</div>
+<table>
+<thead><tr><th>#</th><th>File</th><th>Findings</th></tr></thead>
+<tbody><tr><td style="font-weight:700;color:var(--text-muted);width:32px">1</td><td><code style="font-size:.82rem">D:\dev\fake-cost-allocations\venv\Lib\site-packages\cryptography-49.0.0.dist-info</code> <span class="pill pill-critical" style="font-size:.65rem">1 crit/high</span></td><td style="width:120px"><div class="bar-track" style="height:18px"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#f59e0b,#dc2626)"></div><span class="bar-label" style="line-height:18px;font-size:.7rem">1</span></div></td></tr>
+<tr><td style="font-weight:700;color:var(--text-muted);width:32px">2</td><td><code style="font-size:.82rem">D:\dev\fake-cost-allocations\venv\Lib\site-packages\ecdsa-0.19.2.dist-info</code> <span class="pill pill-critical" style="font-size:.65rem">1 crit/high</span></td><td style="width:120px"><div class="bar-track" style="height:18px"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#f59e0b,#dc2626)"></div><span class="bar-label" style="line-height:18px;font-size:.7rem">1</span></div></td></tr>
+<tr><td style="font-weight:700;color:var(--text-muted);width:32px">3</td><td><code style="font-size:.82rem">D:\dev\fake-cost-allocations\venv\Lib\site-packages\pytest-8.4.1.dist-info</code></td><td style="width:120px"><div class="bar-track" style="height:18px"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#f59e0b,#dc2626)"></div><span class="bar-label" style="line-height:18px;font-size:.7rem">1</span></div></td></tr>
+<tr><td style="font-weight:700;color:var(--text-muted);width:32px">4</td><td><code style="font-size:.82rem">D:\dev\fake-cost-allocations\venv\Lib\site-packages\python_jose-3.3.0.dist-info</code> <span class="pill pill-critical" style="font-size:.65rem">1 crit/high</span></td><td style="width:120px"><div class="bar-track" style="height:18px"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#f59e0b,#dc2626)"></div><span class="bar-label" style="line-height:18px;font-size:.7rem">1</span></div></td></tr>
+<tr><td style="font-weight:700;color:var(--text-muted);width:32px">5</td><td><code style="font-size:.82rem">D:\dev\fake-cost-allocations\venv\Lib\site-packages\python_multipart-0.0.20.dist-info</code> <span class="pill pill-critical" style="font-size:.65rem">1 crit/high</span></td><td style="width:120px"><div class="bar-track" style="height:18px"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#f59e0b,#dc2626)"></div><span class="bar-label" style="line-height:18px;font-size:.7rem">1</span></div></td></tr>
+<tr><td style="font-weight:700;color:var(--text-muted);width:32px">6</td><td><code style="font-size:.82rem">D:\dev\fake-cost-allocations\venv\Lib\site-packages\cost_allocations-0.1.0.dist-info</code> <span class="pill pill-critical" style="font-size:.65rem">1 crit/high</span></td><td style="width:120px"><div class="bar-track" style="height:18px"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#f59e0b,#dc2626)"></div><span class="bar-label" style="line-height:18px;font-size:.7rem">1</span></div></td></tr>
+</tbody>
+</table>
+</section>
+<section class="card" id="findings-table">
+<div class="card-header">
+  <h2>All Findings</h2>
+</div>
+<p style="color:var(--text-muted);margin-bottom:12px;font-size:.85rem">6 total findings.
+<strong>Confirmed</strong> = full source-to-sink data flow verified. <strong>Potential</strong> = pattern match without full flow trace.</p>
+<div style="overflow-x:auto">
+<table>
+<thead><tr><th>#</th><th>Severity</th><th>Status</th><th>Finding</th><th>Location</th><th>Lang</th><th>CWE</th></tr></thead>
+<tbody><tr onclick="location.hash='finding-4'" style="cursor:pointer" title="Jump to this finding"><td>1</td><td><span class="pill pill-critical">critical</span></td><td><span class="badge-potential">Potential</span></td><td>Vulnerable Dependency: python-jose</td><td><code style="font-size:.78rem">D:\dev\fake-cost-allocations\venv\Lib\site-packages\python_jose-3.3.0.dist-info:0</code></td><td>deps</td><td>CWE-1104</td></tr><tr onclick="location.hash='finding-1'" style="cursor:pointer" title="Jump to this finding"><td>2</td><td><span class="pill pill-high">high</span></td><td><span class="badge-potential">Potential</span></td><td>Vulnerable Dependency: cryptography</td><td><code style="font-size:.78rem">D:\dev\fake-cost-allocations\venv\Lib\site-packages\cryptography-49.0.0.dist-info:0</code></td><td>deps</td><td>CWE-1104</td></tr><tr onclick="location.hash='finding-2'" style="cursor:pointer" title="Jump to this finding"><td>3</td><td><span class="pill pill-high">high</span></td><td><span class="badge-potential">Potential</span></td><td>Vulnerable Dependency: ecdsa</td><td><code style="font-size:.78rem">D:\dev\fake-cost-allocations\venv\Lib\site-packages\ecdsa-0.19.2.dist-info:0</code></td><td>deps</td><td>CWE-1104</td></tr><tr onclick="location.hash='finding-5'" style="cursor:pointer" title="Jump to this finding"><td>4</td><td><span class="pill pill-high">high</span></td><td><span class="badge-potential">Potential</span></td><td>Vulnerable Dependency: python-multipart</td><td><code style="font-size:.78rem">D:\dev\fake-cost-allocations\venv\Lib\site-packages\python_multipart-0.0.20.dist-info:0</code></td><td>deps</td><td>CWE-1104</td></tr><tr onclick="location.hash='finding-6'" style="cursor:pointer" title="Jump to this finding"><td>5</td><td><span class="pill pill-high">high</span></td><td><span class="badge-potential">Potential</span></td><td>Vulnerable Dependency: cost-allocations</td><td><code style="font-size:.78rem">D:\dev\fake-cost-allocations\venv\Lib\site-packages\cost_allocations-0.1.0.dist-info:0</code></td><td>deps</td><td>CWE-1104</td></tr><tr onclick="location.hash='finding-3'" style="cursor:pointer" title="Jump to this finding"><td>6</td><td><span class="pill pill-medium">medium</span></td><td><span class="badge-potential">Potential</span></td><td>Vulnerable Dependency: pytest</td><td><code style="font-size:.78rem">D:\dev\fake-cost-allocations\venv\Lib\site-packages\pytest-8.4.1.dist-info:0</code></td><td>deps</td><td>CWE-1104</td></tr></tbody>
+</table>
+</div>
+</section>
+<section class="card" id="findings">
+<div class="card-header">
+  <h2>Detailed Findings</h2>
+</div>
+<input type="text" class="search-box" id="findingsSearch"
+  placeholder="Search findings by name, file, CWE..." onkeyup="filterFindings(this.value)">
+<div id="findingsBody" style="margin-top:16px">
+<details><summary>dependencies (6) <span class="pill pill-critical">1</span> <span class="pill pill-high">4</span> <span class="pill pill-medium">1</span></summary><div class="detail-body"><div class="finding-item" id="finding-4" data-search="vulnerable dependency: python-jose d:\dev\fake-cost-allocations\venv\lib\site-packages\python_jose-3.3.0.dist-info cwe-1104 a06:2021 – vulnerable and outdated components critical" data-fid="1">
+  <div class="edit-actions">
+    <button class="btn-del" onclick="deleteFinding(this)" title="Remove finding"> Remove</button>
+    <button onclick="addNote(this)" title="Add analyst note"> Note</button>
+    <select class="sev-select" onchange="changeSeverity(this)">
+      <option value="critical" selected>Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option><option value="info">Info</option>
+    </select>
+  </div>
+  <div class="finding-title"><span class="pill pill-critical">critical</span> <strong>#1 Vulnerable Dependency: python-jose</strong> <span class="badge-potential">POTENTIAL</span><span style="color:var(--text-muted);font-size:.8rem"> · Confidence: 95%</span></div>
+  <div class="finding-meta">
+    <code>D:\dev\fake-cost-allocations\venv\Lib\site-packages\python_jose-3.3.0.dist-info</code>
+     <a href="https://cwe.mitre.org/data/definitions/1104.html" target="_blank">CWE-1104</a>
+     <span style="color:var(--text-dim)">·</span> A06:2021 – Vulnerable and Outdated Components
+  </div>
+  <p class="finding-desc" style="margin:8px 0;font-size:.88rem;color:#334155">python-jose algorithm confusion with OpenSSH ECDSA keys</p>
+  <div class="match-block"><div class="match-label">Location</div><code>D:\dev\fake-cost-allocations\venv\Lib\site-packages\python_jose-3.3.0.dist-info</code><div class="match-label" style="margin-top:8px">Matched Pattern</div><code>python-jose@3.3.0</code></div>
+  
+  <div class="flow-block" style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px"><div style="font-weight:700;font-size:.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Data Flow</div><div style="margin-bottom:4px"><span class="flow-label sink" style="margin:0">Sink: vulnerable_dependency</span></div></div>
+  
+  <div style="margin-top:10px;font-size:.88rem"><strong>Remediation:</strong> <span class="finding-remed">Update to the patched version or remove the package.</span></div>
+  
+  <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:.85rem;color:#92400e"><strong>+2 duplicate occurrence(s)</strong> on lines: 0, 0, 0</div>
+</div>
+<div class="finding-item" id="finding-1" data-search="vulnerable dependency: cryptography d:\dev\fake-cost-allocations\venv\lib\site-packages\cryptography-49.0.0.dist-info cwe-1104 a06:2021 – vulnerable and outdated components high" data-fid="2">
+  <div class="edit-actions">
+    <button class="btn-del" onclick="deleteFinding(this)" title="Remove finding"> Remove</button>
+    <button onclick="addNote(this)" title="Add analyst note"> Note</button>
+    <select class="sev-select" onchange="changeSeverity(this)">
+      <option value="critical">Critical</option><option value="high" selected>High</option><option value="medium">Medium</option><option value="low">Low</option><option value="info">Info</option>
+    </select>
+  </div>
+  <div class="finding-title"><span class="pill pill-high">high</span> <strong>#2 Vulnerable Dependency: cryptography</strong> <span class="badge-potential">POTENTIAL</span><span style="color:var(--text-muted);font-size:.8rem"> · Confidence: 95%</span></div>
+  <div class="finding-meta">
+    <code>D:\dev\fake-cost-allocations\venv\Lib\site-packages\cryptography-49.0.0.dist-info</code>
+     <a href="https://cwe.mitre.org/data/definitions/1104.html" target="_blank">CWE-1104</a>
+     <span style="color:var(--text-dim)">·</span> A06:2021 – Vulnerable and Outdated Components
+  </div>
+  <p class="finding-desc" style="margin:8px 0;font-size:.88rem;color:#334155">cryptography: PKCS#7 EnvelopedData decryption exposes a Bleichenbacher oracle through distinguishable errors and timing</p>
+  <div class="match-block"><div class="match-label">Location</div><code>D:\dev\fake-cost-allocations\venv\Lib\site-packages\cryptography-49.0.0.dist-info</code><div class="match-label" style="margin-top:8px">Matched Pattern</div><code>cryptography@49.0.0</code></div>
+  
+  <div class="flow-block" style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px"><div style="font-weight:700;font-size:.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Data Flow</div><div style="margin-bottom:4px"><span class="flow-label sink" style="margin:0">Sink: vulnerable_dependency</span></div></div>
+  
+  <div style="margin-top:10px;font-size:.88rem"><strong>Remediation:</strong> <span class="finding-remed">Update to the patched version or remove the package.</span></div>
+  
+  
+</div>
+<div class="finding-item" id="finding-2" data-search="vulnerable dependency: ecdsa d:\dev\fake-cost-allocations\venv\lib\site-packages\ecdsa-0.19.2.dist-info cwe-1104 a06:2021 – vulnerable and outdated components high" data-fid="3">
+  <div class="edit-actions">
+    <button class="btn-del" onclick="deleteFinding(this)" title="Remove finding"> Remove</button>
+    <button onclick="addNote(this)" title="Add analyst note"> Note</button>
+    <select class="sev-select" onchange="changeSeverity(this)">
+      <option value="critical">Critical</option><option value="high" selected>High</option><option value="medium">Medium</option><option value="low">Low</option><option value="info">Info</option>
+    </select>
+  </div>
+  <div class="finding-title"><span class="pill pill-high">high</span> <strong>#3 Vulnerable Dependency: ecdsa</strong> <span class="badge-potential">POTENTIAL</span><span style="color:var(--text-muted);font-size:.8rem"> · Confidence: 95%</span></div>
+  <div class="finding-meta">
+    <code>D:\dev\fake-cost-allocations\venv\Lib\site-packages\ecdsa-0.19.2.dist-info</code>
+     <a href="https://cwe.mitre.org/data/definitions/1104.html" target="_blank">CWE-1104</a>
+     <span style="color:var(--text-dim)">·</span> A06:2021 – Vulnerable and Outdated Components
+  </div>
+  <p class="finding-desc" style="margin:8px 0;font-size:.88rem;color:#334155">Minerva timing attack on P-256 in python-ecdsa</p>
+  <div class="match-block"><div class="match-label">Location</div><code>D:\dev\fake-cost-allocations\venv\Lib\site-packages\ecdsa-0.19.2.dist-info</code><div class="match-label" style="margin-top:8px">Matched Pattern</div><code>ecdsa@0.19.2</code></div>
+  
+  <div class="flow-block" style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px"><div style="font-weight:700;font-size:.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Data Flow</div><div style="margin-bottom:4px"><span class="flow-label sink" style="margin:0">Sink: vulnerable_dependency</span></div></div>
+  
+  <div style="margin-top:10px;font-size:.88rem"><strong>Remediation:</strong> <span class="finding-remed">Update to the patched version or remove the package.</span></div>
+  
+  
+</div>
+<div class="finding-item" id="finding-5" data-search="vulnerable dependency: python-multipart d:\dev\fake-cost-allocations\venv\lib\site-packages\python_multipart-0.0.20.dist-info cwe-1104 a06:2021 – vulnerable and outdated components high" data-fid="4">
+  <div class="edit-actions">
+    <button class="btn-del" onclick="deleteFinding(this)" title="Remove finding"> Remove</button>
+    <button onclick="addNote(this)" title="Add analyst note"> Note</button>
+    <select class="sev-select" onchange="changeSeverity(this)">
+      <option value="critical">Critical</option><option value="high" selected>High</option><option value="medium">Medium</option><option value="low">Low</option><option value="info">Info</option>
+    </select>
+  </div>
+  <div class="finding-title"><span class="pill pill-high">high</span> <strong>#4 Vulnerable Dependency: python-multipart</strong> <span class="badge-potential">POTENTIAL</span><span style="color:var(--text-muted);font-size:.8rem"> · Confidence: 95%</span></div>
+  <div class="finding-meta">
+    <code>D:\dev\fake-cost-allocations\venv\Lib\site-packages\python_multipart-0.0.20.dist-info</code>
+     <a href="https://cwe.mitre.org/data/definitions/1104.html" target="_blank">CWE-1104</a>
+     <span style="color:var(--text-dim)">·</span> A06:2021 – Vulnerable and Outdated Components
+  </div>
+  <p class="finding-desc" style="margin:8px 0;font-size:.88rem;color:#334155">python-multipart: Quadratic-time querystring parsing with semicolon separators causes CPU denial of service</p>
+  <div class="match-block"><div class="match-label">Location</div><code>D:\dev\fake-cost-allocations\venv\Lib\site-packages\python_multipart-0.0.20.dist-info</code><div class="match-label" style="margin-top:8px">Matched Pattern</div><code>python-multipart@0.0.20</code></div>
+  
+  <div class="flow-block" style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px"><div style="font-weight:700;font-size:.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Data Flow</div><div style="margin-bottom:4px"><span class="flow-label sink" style="margin:0">Sink: vulnerable_dependency</span></div></div>
+  
+  <div style="margin-top:10px;font-size:.88rem"><strong>Remediation:</strong> <span class="finding-remed">Update to the patched version or remove the package.</span></div>
+  
+  <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:6px 10px;margin-bottom:8px;font-size:.85rem;color:#92400e"><strong>+6 duplicate occurrence(s)</strong> on lines: 0, 0, 0, 0, 0, 0, 0</div>
+</div>
+<div class="finding-item" id="finding-6" data-search="vulnerable dependency: cost-allocations d:\dev\fake-cost-allocations\venv\lib\site-packages\cost_allocations-0.1.0.dist-info cwe-1104 a06:2021 – vulnerable and outdated components high" data-fid="5">
+  <div class="edit-actions">
+    <button class="btn-del" onclick="deleteFinding(this)" title="Remove finding"> Remove</button>
+    <button onclick="addNote(this)" title="Add analyst note"> Note</button>
+    <select class="sev-select" onchange="changeSeverity(this)">
+      <option value="critical">Critical</option><option value="high" selected>High</option><option value="medium">Medium</option><option value="low">Low</option><option value="info">Info</option>
+    </select>
+  </div>
+  <div class="finding-title"><span class="pill pill-high">high</span> <strong>#5 Vulnerable Dependency: cost-allocations</strong> <span class="badge-potential">POTENTIAL</span><span style="color:var(--text-muted);font-size:.8rem"> · Confidence: 95%</span></div>
+  <div class="finding-meta">
+    <code>D:\dev\fake-cost-allocations\venv\Lib\site-packages\cost_allocations-0.1.0.dist-info</code>
+     <a href="https://cwe.mitre.org/data/definitions/1104.html" target="_blank">CWE-1104</a>
+     <span style="color:var(--text-dim)">·</span> A06:2021 – Vulnerable and Outdated Components
+  </div>
+  <p class="finding-desc" style="margin:8px 0;font-size:.88rem;color:#334155">Package missing from public registry (dependency confusion). https://pypi.org/pypi/cost-allocations/json returned 404 (package not on public registry)</p>
+  <div class="match-block"><div class="match-label">Location</div><code>D:\dev\fake-cost-allocations\venv\Lib\site-packages\cost_allocations-0.1.0.dist-info</code><div class="match-label" style="margin-top:8px">Matched Pattern</div><code>cost-allocations@0.1.0</code></div>
+  
+  <div class="flow-block" style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px"><div style="font-weight:700;font-size:.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Data Flow</div><div style="margin-bottom:4px"><span class="flow-label sink" style="margin:0">Sink: vulnerable_dependency</span></div></div>
+  
+  <div style="margin-top:10px;font-size:.88rem"><strong>Remediation:</strong> <span class="finding-remed">Update to the patched version or remove the package.</span></div>
+  
+  
+</div>
+<div class="finding-item" id="finding-3" data-search="vulnerable dependency: pytest d:\dev\fake-cost-allocations\venv\lib\site-packages\pytest-8.4.1.dist-info cwe-1104 a06:2021 – vulnerable and outdated components medium" data-fid="6">
+  <div class="edit-actions">
+    <button class="btn-del" onclick="deleteFinding(this)" title="Remove finding"> Remove</button>
+    <button onclick="addNote(this)" title="Add analyst note"> Note</button>
+    <select class="sev-select" onchange="changeSeverity(this)">
+      <option value="critical">Critical</option><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option><option value="info">Info</option>
+    </select>
+  </div>
+  <div class="finding-title"><span class="pill pill-medium">medium</span> <strong>#6 Vulnerable Dependency: pytest</strong> <span class="badge-potential">POTENTIAL</span><span style="color:var(--text-muted);font-size:.8rem"> · Confidence: 95%</span></div>
+  <div class="finding-meta">
+    <code>D:\dev\fake-cost-allocations\venv\Lib\site-packages\pytest-8.4.1.dist-info</code>
+     <a href="https://cwe.mitre.org/data/definitions/1104.html" target="_blank">CWE-1104</a>
+     <span style="color:var(--text-dim)">·</span> A06:2021 – Vulnerable and Outdated Components
+  </div>
+  <p class="finding-desc" style="margin:8px 0;font-size:.88rem;color:#334155">pytest has vulnerable tmpdir handling</p>
+  <div class="match-block"><div class="match-label">Location</div><code>D:\dev\fake-cost-allocations\venv\Lib\site-packages\pytest-8.4.1.dist-info</code><div class="match-label" style="margin-top:8px">Matched Pattern</div><code>pytest@8.4.1</code></div>
+  
+  <div class="flow-block" style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:8px"><div style="font-weight:700;font-size:.72rem;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Data Flow</div><div style="margin-bottom:4px"><span class="flow-label sink" style="margin:0">Sink: vulnerable_dependency</span></div></div>
+  
+  <div style="margin-top:10px;font-size:.88rem"><strong>Remediation:</strong> <span class="finding-remed">Update to the patched version or remove the package.</span></div>
+  
+  
+</div></div></details>
+</div>
+</section>
+<section class="card" id="compliance">
+<div class="card-header">
+  <h2>Compliance Mapping</h2>
+</div>
+<h3 style="font-size:.95rem;margin-bottom:10px">OWASP Top 10 (2021)</h3>
+<table>
+<thead><tr><th>Code</th><th>Category</th><th style="text-align:center">Status</th></tr></thead>
+<tbody><tr><td><strong>A01</strong></td><td>Broken Access Control</td><td style='text-align:center'><span style="color:var(--success);font-weight:700"> Pass</span></td></tr>
+<tr><td><strong>A02</strong></td><td>Cryptographic Failures</td><td style='text-align:center'><span style="color:var(--success);font-weight:700"> Pass</span></td></tr>
+<tr><td><strong>A03</strong></td><td>Injection</td><td style='text-align:center'><span style="color:var(--success);font-weight:700"> Pass</span></td></tr>
+<tr><td><strong>A04</strong></td><td>Insecure Design</td><td style='text-align:center'><span style="color:var(--success);font-weight:700"> Pass</span></td></tr>
+<tr><td><strong>A05</strong></td><td>Security Misconfiguration</td><td style='text-align:center'><span style="color:var(--success);font-weight:700"> Pass</span></td></tr>
+<tr><td><strong>A06</strong></td><td>Vulnerable &amp; Outdated Components</td><td style='text-align:center'><span style="color:var(--sev-critical);font-weight:700"> 6 findings</span></td></tr>
+<tr><td><strong>A07</strong></td><td>Identification &amp; Authentication Failures</td><td style='text-align:center'><span style="color:var(--success);font-weight:700"> Pass</span></td></tr>
+<tr><td><strong>A08</strong></td><td>Software &amp; Data Integrity Failures</td><td style='text-align:center'><span style="color:var(--success);font-weight:700"> Pass</span></td></tr>
+<tr><td><strong>A09</strong></td><td>Security Logging &amp; Monitoring Failures</td><td style='text-align:center'><span style="color:var(--success);font-weight:700"> Pass</span></td></tr>
+<tr><td><strong>A10</strong></td><td>Server-Side Request Forgery</td><td style='text-align:center'><span style="color:var(--success);font-weight:700"> Pass</span></td></tr>
+</tbody>
+</table>
+
+<h3 style="font-size:.95rem;margin-top:28px;margin-bottom:10px">CWE Top 25 (2023)</h3>
+<table>
+<thead><tr><th>CWE</th><th style="text-align:center">Status</th></tr></thead>
+<tbody><tr><td><strong>CWE-787</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-79</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-89</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-416</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-78</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-20</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-125</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-22</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-352</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-434</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-862</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-476</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-287</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-190</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-502</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-77</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-119</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-798</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-918</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-306</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-362</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-269</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-94</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-863</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+<tr><td><strong>CWE-276</strong></td><td style='text-align:center'><span style="color:var(--success);font-weight:600"> Clear</span></td></tr>
+</tbody>
+</table>
+</section>
+<section class="card" id="definitions">
+<div class="card-header">
+  <h2>Glossary</h2>
+</div>
+<table>
+<thead><tr><th style="width:180px">Term</th><th>Definition</th></tr></thead>
+<tbody><tr><td><strong>CWE</strong></td><td>Common Weakness Enumeration — a community-developed list of software weakness types.</td></tr>
+<tr><td><strong>CWE Top 25</strong></td><td>The 25 most dangerous software weaknesses published annually by MITRE.</td></tr>
+<tr><td><strong>Compliance Mapping</strong></td><td>Cross-referencing findings against industry standards such as OWASP or CWE Top 25.</td></tr>
+<tr><td><strong>Confidence</strong></td><td>The tool&#x27;s certainty that a finding is a true positive (0–1 scale).</td></tr>
+<tr><td><strong>False Positive</strong></td><td>A finding reported by the tool that is not an actual vulnerability.</td></tr>
+<tr><td><strong>LOC</strong></td><td>Lines of Code — a size metric for the scanned codebase.</td></tr>
+<tr><td><strong>OWASP Top 10</strong></td><td>A standard awareness document for web application security listing the ten most critical risks.</td></tr>
+<tr><td><strong>Remediation</strong></td><td>The recommended fix or mitigation for a finding.</td></tr>
+<tr><td><strong>SAST</strong></td><td>Static Application Security Testing — analyses source code without executing it.</td></tr>
+<tr><td><strong>Severity</strong></td><td>The potential impact of a finding: Critical, High, Medium, Low or Informational.</td></tr>
+<tr><td><strong>Taint Flow</strong></td><td>A data-flow path where untrusted (tainted) input reaches a sensitive sink without sanitisation.</td></tr>
+<tr><td><strong>Vulnerability Density</strong></td><td>The number of findings per 1 000 lines of code (LOC).</td></tr>
+</tbody>
+</table>
+</section>
+</main>
+<footer class="report-footer"><strong>Insomnia SAST Engine</strong> · Generated 2026-08-13 17:38:11<br><span style="font-size:.75rem">This report is confidential and intended for authorised recipients only.</span></footer>
+<script>
+/* ============================================================
+   Navigation
+   ============================================================ */
+function toggleNav() {
+  var nav = document.getElementById('sideNav');
+  var overlay = document.querySelector('.nav-overlay');
+  nav.classList.toggle('open');
+  overlay.classList.toggle('show');
+}
+
+window.addEventListener('scroll', function() {
+  var btn = document.getElementById('backToTop');
+  if (window.scrollY > 400) btn.classList.add('visible');
+  else btn.classList.remove('visible');
+});
+
+document.querySelectorAll('.side-nav a').forEach(function(a) {
+  a.addEventListener('click', function() {
+    document.getElementById('sideNav').classList.remove('open');
+    document.querySelector('.nav-overlay').classList.remove('show');
+  });
+});
+
+var sections = document.querySelectorAll('section[id], div[id]');
+var navLinks = document.querySelectorAll('.side-nav a');
+window.addEventListener('scroll', function() {
+  var scrollPos = window.scrollY + 120;
+  sections.forEach(function(sec) {
+    if (sec.offsetTop <= scrollPos && (sec.offsetTop + sec.offsetHeight) > scrollPos) {
+      navLinks.forEach(function(link) {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + sec.id) {
+          link.classList.add('active');
+        }
+      });
+    }
+  });
+});
+
+/* ============================================================
+   Search / Filter findings
+   ============================================================ */
+function filterFindings(query) {
+  var q = query.toLowerCase().trim();
+  var items = document.querySelectorAll('.finding-item');
+  items.forEach(function(item) {
+    var text = item.getAttribute('data-search') || '';
+    item.style.display = (!q || text.indexOf(q) !== -1) ? '' : 'none';
+  });
+}
+
+/* ============================================================
+   Edit Mode
+   ============================================================ */
+var editMode = false;
+var undoStack = [];
+
+function toggleEditMode() {
+  editMode = !editMode;
+  document.body.classList.toggle('edit-mode', editMode);
+  document.getElementById('editToolbar').classList.toggle('active', editMode);
+
+  var link = document.getElementById('editModeLink');
+  link.textContent = editMode ? 'Exit Edit Mode' : 'Edit Report';
+  link.style.color = editMode ? '#dc2626' : '#7c3aed';
+
+  /* Make descriptions and remediations editable */
+  document.querySelectorAll('.finding-desc, .finding-remed').forEach(function(el) {
+    el.setAttribute('contenteditable', editMode ? 'true' : 'false');
+  });
+
+  /* Show severity selectors */
+  document.querySelectorAll('.sev-select').forEach(function(sel) {
+    sel.style.display = editMode ? 'inline-block' : 'none';
+  });
+
+  /* Push to header if edit mode pushes content down */
+  document.querySelector('.main-content').style.paddingTop = editMode ? '60px' : '32px';
+
+  if (editMode) {
+    updateEditStatus('Edit mode active — click text to edit, use buttons to manage findings');
+  }
+}
+
+function updateEditStatus(msg) {
+  var el = document.getElementById('editStatus');
+  if (el) el.textContent = msg;
+}
+
+/* ============================================================
+   Finding Actions
+   ============================================================ */
+function deleteFinding(btn) {
+  var item = btn.closest('.finding-item');
+  if (!item) return;
+  undoStack.push({ action: 'delete', el: item, parent: item.parentNode, next: item.nextSibling });
+  item.classList.add('deleted-finding');
+  updateEditStatus('Finding removed (click Undo to restore)');
+}
+
+function addNote(btn) {
+  var item = btn.closest('.finding-item');
+  if (!item) return;
+  /* Check if note already exists */
+  if (item.querySelector('.analyst-note')) {
+    item.querySelector('.analyst-note .note-text').focus();
+    return;
+  }
+  var note = document.createElement('div');
+  note.className = 'analyst-note';
+  note.innerHTML = '<div class="note-label">Analyst Note</div>' +
+    '<div class="note-text" contenteditable="true" placeholder="Type your note here..."></div>';
+  item.appendChild(note);
+  note.querySelector('.note-text').focus();
+  undoStack.push({ action: 'addNote', el: note, parent: item });
+  updateEditStatus('Note added — type your analysis');
+}
+
+function changeSeverity(sel) {
+  var item = sel.closest('.finding-item');
+  if (!item) return;
+  var newSev = sel.value;
+  var pill = item.querySelector('.pill');
+  if (!pill) return;
+
+  var oldClass = pill.className;
+  var oldText = pill.textContent;
+  undoStack.push({ action: 'severity', pill: pill, oldClass: oldClass, oldText: oldText, sel: sel, oldVal: oldText.toLowerCase() });
+
+  pill.className = 'pill pill-' + newSev;
+  pill.textContent = newSev;
+  updateEditStatus('Severity changed to ' + newSev.toUpperCase());
+}
+
+function addGlobalNote() {
+  var findingsBody = document.getElementById('findingsBody');
+  if (!findingsBody) return;
+  var note = document.createElement('div');
+  note.className = 'analyst-note';
+  note.style.marginBottom = '16px';
+  note.innerHTML = '<div class="note-label">Analyst Note (Global)</div>' +
+    '<div class="note-text" contenteditable="true" placeholder="Add a global observation or recommendation..."></div>';
+  findingsBody.insertBefore(note, findingsBody.firstChild);
+  note.querySelector('.note-text').focus();
+  undoStack.push({ action: 'addGlobalNote', el: note, parent: findingsBody });
+}
+
+function undoLastAction() {
+  if (undoStack.length === 0) {
+    updateEditStatus('Nothing to undo');
+    return;
+  }
+  var action = undoStack.pop();
+  switch (action.action) {
+    case 'delete':
+      action.el.classList.remove('deleted-finding');
+      updateEditStatus('Finding restored');
+      break;
+    case 'addNote':
+    case 'addGlobalNote':
+      action.el.remove();
+      updateEditStatus('Note removed');
+      break;
+    case 'severity':
+      action.pill.className = action.oldClass;
+      action.pill.textContent = action.oldText;
+      action.sel.value = action.oldVal;
+      updateEditStatus('Severity reverted');
+      break;
+  }
+}
+
+function expandAllFindings() {
+  document.querySelectorAll('#findingsBody details').forEach(function(d) { d.open = true; });
+}
+
+function collapseAllFindings() {
+  document.querySelectorAll('#findingsBody details').forEach(function(d) { d.open = false; });
+}
+
+/* ============================================================
+   Export Edited Report
+   ============================================================ */
+function exportEditedReport() {
+  /* Remove deleted findings from DOM before export */
+  var clone = document.documentElement.cloneNode(true);
+
+  /* Remove deleted findings */
+  clone.querySelectorAll('.deleted-finding').forEach(function(el) { el.remove(); });
+
+  /* Remove edit-mode classes and toolbar */
+  clone.querySelector('body').classList.remove('edit-mode');
+  var toolbar = clone.querySelector('.edit-toolbar');
+  if (toolbar) toolbar.remove();
+
+  /* Make everything non-editable */
+  clone.querySelectorAll('[contenteditable]').forEach(function(el) {
+    el.removeAttribute('contenteditable');
+  });
+
+  /* Hide edit actions and severity selectors */
+  clone.querySelectorAll('.edit-actions').forEach(function(el) { el.remove(); });
+  clone.querySelectorAll('.sev-select').forEach(function(el) { el.remove(); });
+
+  /* Reset padding */
+  var mc = clone.querySelector('.main-content');
+  if (mc) mc.style.paddingTop = '32px';
+
+  /* Update edit link back to normal */
+  var editLink = clone.querySelector('#editModeLink');
+  if (editLink) {
+    editLink.textContent = 'Edit Report';
+    editLink.style.color = '#7c3aed';
+  }
+
+  /* Generate downloadable HTML */
+  var html = '<!DOCTYPE html>\n' + clone.outerHTML;
+  var blob = new Blob([html], { type: 'text/html' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'sast_report_edited.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  updateEditStatus('Edited report exported!');
+}
+
+/* ============================================================
+   Keyboard shortcuts
+   ============================================================ */
+/* Click a row in "All Findings" -> open the collapsed section, scroll to the
+   detailed card and flash it, so the finding is actually shown. */
+function _openFindingAnchor() {
+  var h = location.hash;
+  if (!h || h.indexOf('#finding-') !== 0) return;
+  var el = document.getElementById(h.slice(1));
+  if (!el) return;
+  var d = el.closest('details');
+  while (d) { d.open = true; var p = d.parentElement; d = p ? p.closest('details') : null; }
+  el.scrollIntoView({behavior: 'smooth', block: 'center'});
+  el.style.transition = 'box-shadow .3s';
+  el.style.boxShadow = '0 0 0 3px #a855f7';
+  setTimeout(function() { el.style.boxShadow = ''; }, 2200);
+}
+window.addEventListener('hashchange', _openFindingAnchor);
+window.addEventListener('load', _openFindingAnchor);
+
+document.addEventListener('keydown', function(e) {
+  /* Ctrl+E = toggle edit mode */
+  if (e.ctrlKey && e.key === 'e') {
+    e.preventDefault();
+    toggleEditMode();
+  }
+  /* Ctrl+Z = undo in edit mode */
+  if (e.ctrlKey && e.key === 'z' && editMode) {
+    var active = document.activeElement;
+    if (active && active.getAttribute('contenteditable') === 'true') return; /* Let browser handle text undo */
+    e.preventDefault();
+    undoLastAction();
+  }
+  /* Ctrl+P = print */
+  if (e.ctrlKey && e.key === 'p') {
+    /* Let browser handle normally */
+  }
+  /* Escape = close nav or exit edit mode */
+  if (e.key === 'Escape') {
+    var nav = document.getElementById('sideNav');
+    if (nav.classList.contains('open')) {
+      toggleNav();
+    } else if (editMode) {
+      toggleEditMode();
+    }
+  }
+});
+</script>
+</body></html>
