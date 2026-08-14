@@ -6,7 +6,7 @@ CA-REQ-001|Code quality and conformity|Code has no linting errors|''
 CA-REQ-002|Code quality and conformity|Code conforms to standard style guides|''
 CA-REQ-003|Code quality and conformity|Code uses strong typing|''
 CA-REQ-004|Code quality and conformity|No commented code is used|''
-CA-REQ-005|Security|No unnecessary data is exposed|Ensure no endpoints are extraneous or deliver information that is not essential, e.g. done just to satisfy REST design principles.
+CA-REQ-005|Security|No unnecessary data is exposed|Ensure no endpoints are themselves extraneous or deliver information that is not essential, e.g. done just to satisfy REST design principles.
 CA-REQ-006|Code quality and conformity|Folder structure conforms to standard|''
 CA-REQ-007|Code quality and conformity|Code complexity is low|''
 CA-REQ-008|Code quality and conformity|Resource utilisation is minimal|''
