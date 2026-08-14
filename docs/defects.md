@@ -73,3 +73,4 @@ ISSUE-068|CA-REQ-071|Environment and config variables are securely handled|Appli
 ISSUE-069|CA-REQ-072|All database logic is wrapped in at least one exception catch|Majority of endpoints have no fallback try/except|4
 ISSUE-070|CA-REQ-073|Database transactions are abstracted via use of an ORM|All database interactions are manual|6
 ISSUE-071|CA-REQ-073|Database transactions are abstracted via use of an ORM|No SQL injection sanitisation is used anywhere|7
+ISSUE-072|CA-REQ-071|Environment and config variables are securely handled|Application uses hard-coded host URL and port number|6
