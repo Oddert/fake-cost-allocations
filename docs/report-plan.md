@@ -1,0 +1,80 @@
+# Report Plan
+
+- Introduction
+    - objectives
+        - prove prod readyness
+            - ROI good?
+        - explore vibe coding as process
+    - Implications
+        - security (auth)
+        - regulatory
+        - conformity
+        - integration
+        - ROI
+- Strategy
+    - verification & validation
+    - derive requirements
+    - trade off with auto tests
+    - retesting & followup after go descision
+        - agile integration
+        - regression tests
+    - gherkin syntax
+        - readability
+        - mapped to requirements
+        - vauge
+    - coverage to find features not a measure of success
+    - mocks and services to eventually be used but for now lets be mindful of whats needed to get there
+
+- qa
+    - focus
+        - technical debt
+        - sneaky vulnerabilities
+        - compliance & security
+        - useability
+    - scope
+    - activities
+        - creation of test plan
+        ...?
+    - scenarios & requirement mapping
+    - roles & responsibilities
+    - outcome
+
+- test plan & qa
+    - whats in scope + drawbacks of whats not in
+    - scoring system
+    - tests used
+        - functional (observed)
+            - unit tests
+            - white box
+            - gray box
+            - regression
+        - continual QA
+        - non-functional (static)
+            - manual standards control
+            - linting
+            - dep check
+            - sast
+            - semgrep
+        - future foxed (white-box, gray-box)
+        - pen testing
+    - future desired tests
+        - integration
+            - full system intergation
+            - performance, load, stress
+        - usability testing
+            - beta / aceptance
+            - guerilla
+            - unmoderated
+            - comparative (post GO)
+            - accessibility + e2e (no front end)
+- results
+    - defect summary
+    - triage
+- assessment
+    - LLM unneeded
+    - bad abstraction
+    - good data handling
+    - documentation is mixed and aesthetic focused
+    - ship of thesius
+    - big TDD
+    - is this politics?
