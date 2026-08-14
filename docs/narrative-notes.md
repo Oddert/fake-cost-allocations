@@ -25,3 +25,17 @@
 - semgrep
 
 Affected packages: python-jose, cryptography, python-multipart, pytest
+
+## Findings
+
+- 71 issues
+
+Severity|Count
+---|---
+1|5
+2|17
+3|7
+4|8
+5|11
+6|6
+7|17
