@@ -1,10 +1,13 @@
 # Report Plan
 
 - Introduction
-  - objectives
+  - objectives & focus
     - prove prod readyness
       - ROI good?
     - explore vibe coding as process
+    - provide a regression baseline to ensure further changes are done safely and not in conflict
+      - early detection of defects
+    - create and verify against a software requirements specification SRS
   - Implications
     - security (auth)
     - regulatory
@@ -13,9 +16,22 @@
     - ROI
 - Strategy
   - verification & validation
-  - derive requirements
+    - derive requirements from observations
+    - test requirements on their own terms
+    - challenge these requirements
+    - apply standards and static analysis
+    - unable to perform the folowing due to no users yet:
+      - performance
+      - load
+      - stress
+      - uat
+      - minitored, semi monitored, remote
+      - usability
+      - beta
+      - a-b
+      - proper pen testing
   - trade off with auto tests
-  - retesting & followup after go descision
+  - retesting & follow-up after go decision
     - agile integration
     - regression tests
   - gherkin syntax
@@ -34,16 +50,21 @@
   - scope
   - activities
     - creation of test plan
-    - ...?
-  - scenarios & requirement mapping
+    - excecution of test plan
+    - defect recording & triage matrix
+    - ...more?
+  - scenarios & SRS mapping
   - roles & responsibilities
   - outcome
 
 - test plan & qa
-  - whats in scope + drawbacks of whats not in
+  - scope
+    - whats in scope
+    - drawbacks of whats not in scope
   - scoring system
+    - rationale of not wanting to focus only on criticality but also quantity
   - tests used
-    - functional (observed)
+    - functional tests
       - unit tests
       - white box
       - gray box
@@ -52,17 +73,21 @@
     - non-functional (static)
       - manual standards control
       - linting
-      - dep check
-      - sast
-      - semgrep
-    - future foxed (white-box, gray-box)
+      - scans
+        - dep check
+        - sast
+        - semgrep
+        - safety
+        - pip-audit
+        - bandit
+    - future focused (white-box, gray-box)
     - pen testing
   - future desired tests
     - integration
       - full system intergation
       - performance, load, stress
     - usability testing
-      - beta / aceptance
+      - beta / acceptance
       - guerilla
       - unmoderated
       - comparative (post GO)
@@ -70,11 +95,20 @@
 - results
   - defect summary
   - triage
+  - proposed adaptation plan
 - assessment
-  - LLM unneeded
+  - good boilerplate utilities
+    - if we weren't as mature this would be ace
+    - LLM output was going to be opinionated, some god, some bad
   - bad abstraction
   - good data handling
   - documentation is mixed and aesthetic focused
-  - ship of thesius
   - big TDD
+    - requirements and spec (SRS) could now drive good development
+    - design stage omitted. designer should have taken the place of the LLM here
+    - deriving requirements assuming each part works short-circuits SDLC
   - is this politics?
+    - what is the motivation of using an LLM?
+    - to say that it was LLM?
+  - ship of thesius
+    - by the time we're done nothing of the original will remain
