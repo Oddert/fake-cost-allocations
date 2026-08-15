@@ -2,8 +2,8 @@
 
 - Introduction
   - objectives & focus
-    - prove prod readyness
-      - ROI good?
+    - prove prod readiness or create adaptation plan
+    - ROI good?
     - explore vibe coding as process
     - provide a regression baseline to ensure further changes are done safely and not in conflict
       - early detection of defects
@@ -14,22 +14,44 @@
     - conformity
     - integration
     - ROI
+
+- Quality Assurance
+  - focus
+    - technical debt
+    - sneaky vulnerabilities
+    - compliance
+    - security
+    - usability
+  - verification & validation definitions
+  - scope
+    - what's in scope
+    - drawbacks of what's not in scope
+  - activities
+    - creation of test plan
+    - execution of test plan
+    - defect recording & triage matrix
+    - Adoption recommendation
+    - Further Work & Creation of a Maintenance Plan
+    - ...more?
+  - scenarios & SRS mapping
+  - roles & responsibilities
+  - outcome
+
 - Strategy
-  - verification & validation
-    - derive requirements from observations
-    - test requirements on their own terms
-    - challenge these requirements
-    - apply standards and static analysis
-    - unable to perform the folowing due to no users yet:
-      - performance
-      - load
-      - stress
-      - uat
-      - minitored, semi monitored, remote
-      - usability
-      - beta
-      - a-b
-      - proper pen testing
+  - derive requirements from observations
+  - test requirements on their own terms
+  - challenge these requirements
+  - apply standards and static analysis
+  - unable to perform the following due to no users yet:
+    - performance
+    - load
+    - stress
+    - uat
+    - monitored, semi monitored, remote
+    - usability
+    - beta
+    - a-b
+    - proper pen testing
   - trade off with auto tests
   - retesting & follow-up after go decision
     - agile integration
@@ -41,28 +63,10 @@
   - coverage to find features not a measure of success
   - mocks and services to eventually be used but for now lets be mindful of whats needed to get there
 
-- qa
-  - focus
-    - technical debt
-    - sneaky vulnerabilities
-    - compliance & security
-    - useability
-  - scope
-  - activities
-    - creation of test plan
-    - excecution of test plan
-    - defect recording & triage matrix
-    - ...more?
-  - scenarios & SRS mapping
-  - roles & responsibilities
-  - outcome
-
-- test plan & qa
-  - scope
-    - whats in scope
-    - drawbacks of whats not in scope
+- test plan
   - scoring system
     - rationale of not wanting to focus only on criticality but also quantity
+    - work units using fibonacci score
   - tests used
     - functional tests
       - unit tests
@@ -84,7 +88,7 @@
     - pen testing
   - future desired tests
     - integration
-      - full system intergation
+      - full system integration
       - performance, load, stress
     - usability testing
       - beta / acceptance
@@ -97,6 +101,7 @@
   - triage
   - proposed adaptation plan
 - assessment
+  - design in reverse: none of the usual user-driven development activities undertaken, only assumptions made by author and LLM.
   - good boilerplate utilities
     - if we weren't as mature this would be ace
     - LLM output was going to be opinionated, some god, some bad
@@ -110,5 +115,5 @@
   - is this politics?
     - what is the motivation of using an LLM?
     - to say that it was LLM?
-  - ship of thesius
+  - Ship of Theseus
     - by the time we're done nothing of the original will remain
