@@ -38,8 +38,8 @@ ISSUE-033|CA-REQ-012|Variable names are high quality|Multiple instances of singl
 ISSUE-034|CA-REQ-012|Variable names are high quality|Multiple instances of generic variable names like `row`, and `rid` (row ID)|2|3
 ISSUE-035|CA-REQ-012|Variable names are high quality|Generic class names such as the singleton class `Settings`, app may use multiple config classes in the future as per other projects|2|5
 ISSUE-036|CA-REQ-014|Dependency scans are passed|Starlette test client is using `httpx` which is deprecated, `httpx2` is required|5|3
-ISSUE-037|CA-REQ-014|Dependency scans are passed|Pytest version is using depricated `asyncio.get_event_loop_policy` slated for removal in Python 3.16|5|3
-ISSUE-038|CA-REQ-014|Dependency scans are passed|Static scanning with Safety yeilded 23 package vulnerabilities, ignored 13 dues to policy, and suggested three fixes to resolve the remainder|5|5
+ISSUE-037|CA-REQ-014|Dependency scans are passed|Pytest version is using deprecated `asyncio.get_event_loop_policy` slated for removal in Python 3.16|5|3
+ISSUE-038|CA-REQ-014|Dependency scans are passed|Static scanning with Safety yielded 23 package vulnerabilities, ignored 13 dues to policy, and suggested three fixes to resolve the remainder|5|5
 ISSUE-039|CA-REQ-014|Dependency scans are passed|`jose/jwt` is using deprecated `datetime.datetime.utcnow()`|5|3
 ISSUE-040|CA-REQ-014|Dependency scans are passed|Static scanning with pip-audit yielded 14 vulnerabilities across 5 packages|5|5
 ISSUE-041|CA-REQ-015|Static linting against OpenAPI standards yields no errors|Only some endpoints explicitly list a default response status code|3|13
