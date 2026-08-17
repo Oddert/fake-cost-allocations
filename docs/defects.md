@@ -1,7 +1,7 @@
 # Defect findings
 
 Issue No.|Requirement|Scenario|Defect|Score|Work Estimate
----|---|---|---|---
+---|---|---|---|---|---
 ISSUE-001|CA-REQ-001|No linter violations are present|9 Violations found, 7 fixable with auto-fix. Overlap with other requirements such as ambiguous variable names|2|3
 ISSUE-002|CA-REQ-002|Code conforms to standard style guides|16 files found with style violations, fixable with ruff format|2|2
 ISSUE-003|CA-REQ-002|Code conforms to standard style guides|Various instances of scoped imports / imports not at top of file|2|3
