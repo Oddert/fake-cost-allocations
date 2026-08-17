@@ -13,7 +13,6 @@
     - regulatory
     - conformity
     - integration
-    - ROI
 
 - Quality Assurance
   - focus
@@ -34,8 +33,6 @@
     - Further Work & Creation of a Maintenance Plan
     - ...more?
   - scenarios & SRS mapping
-  - roles & responsibilities
-  - outcome
 
 - Strategy
   - derive requirements from observations
@@ -63,20 +60,20 @@
   - coverage to find features not a measure of success
   - mocks and services to eventually be used but for now lets be mindful of whats needed to get there
 
-- test plan
+- Test Plan
   - scoring system
     - rationale of not wanting to focus only on criticality but also quantity
     - work units using fibonacci score
   - tests used
-    - functional tests
-      - unit tests
-      - white box
-      - gray box
-      - regression
-    - continual QA
+    - functional tests against observed functionality
+      - gray box technique to index endpoint features & create auto unit / integration tests
+      - tests then adapted to include imposed requirements (compliance)
+      - Bruno tests generated from OpenAPI.json for manual test portion
+    - Regression test mindset for Continual QA
+    - xFails used to avoid blocking
     - non-functional (static)
-      - manual standards control
-      - linting
+      - manual standards control through white-box observation
+      - linting requirement for contribution standards compliance
       - scans
         - dep check
         - sast
@@ -96,24 +93,42 @@
       - unmoderated
       - comparative (post GO)
       - accessibility + e2e (no front end)
-- results
+    - business process integration
+  - roles & responsibilities
+  - outcome
+
+- Results
   - defect summary
+    - no orm, bad DB abstraction
+    - security configuration & secrets details badly handled
+    - bad exception handling logic
+    - no records being kept of any transactions or interactions which is the whole point
+    - bad code abstraction
+    - documentation is poor
+    - RBAC is hierarchical
   - triage
+    - redesign of the data model around traceability
+    - alteration of the RBAC logic
+    - 
   - proposed adaptation plan
-- assessment
-  - design in reverse: none of the usual user-driven development activities undertaken, only assumptions made by author and LLM.
-  - good boilerplate utilities
-    - if we weren't as mature this would be ace
-    - LLM output was going to be opinionated, some god, some bad
-  - bad abstraction
-  - good data handling
-  - documentation is mixed and aesthetic focused
-  - big TDD
+
+- Assessment
+  - Evaluation of the product
+    - good boilerplate utilities
+      - if we weren't as mature this would be ace
+      - LLM output was going to be opinionated, some god, some bad
+    - bad abstraction
+    - good data handling
+    - documentation is mixed and aesthetic focused
+  - Evaluation of Process
+    - big TDD
     - requirements and spec (SRS) could now drive good development
     - design stage omitted. designer should have taken the place of the LLM here
     - deriving requirements assuming each part works short-circuits SDLC
-  - is this politics?
+  - **SDLC / design in reverse**: none of the usual user-driven development activities undertaken, only assumptions made by author and LLM.
+    - intentionality is missing
+  - **Ship of Theseus**
+    - by the time we're done nothing of the original will remain
+  - Is this politics?
     - what is the motivation of using an LLM?
     - to say that it was LLM?
-  - Ship of Theseus
-    - by the time we're done nothing of the original will remain
