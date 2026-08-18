@@ -25,7 +25,15 @@ from tests.utils.assertions import (
 
 
 def assert_expense_shape(data: dict) -> None:
-    required = {'expense_id', 'period_id', 'cost_centre_id', 'description', 'amount', 'created_by', 'created_at'}
+    required = {
+        'expense_id',
+        'period_id',
+        'cost_centre_id',
+        'description',
+        'amount',
+        'created_by',
+        'created_at',
+    }
     missing = required - data.keys()
     assert not missing, f'Expense missing fields: {missing}'
     assert isinstance(data['expense_id'], int), 'expense_id must be an integer'
@@ -37,7 +45,9 @@ class TestCreateExpense:
     """Feature: Create an expense - POST /periods/{period_id}/expenses"""
 
     @pytest.fixture(autouse=True)
-    def seed_state(self, client: TestClient, analyst_headers: dict, admin_headers: dict):
+    def seed_state(
+        self, client: TestClient, analyst_headers: dict, admin_headers: dict
+    ):
         """Seed an open period and record a cost_centre_id for expense creation."""
         period_resp = client.post(
             '/periods',
@@ -47,7 +57,9 @@ class TestCreateExpense:
         assert_created(period_resp)
         self.period = period_resp.json()
 
-        self.cc_id = client.get('/cost-centres', headers=admin_headers).json()[0]['cost_centre_id']
+        self.cc_id = client.get('/cost-centres', headers=admin_headers).json()[0][
+            'cost_centre_id'
+        ]
 
         self._expense_payload = {
             'cost_centre_id': self.cc_id,
@@ -60,10 +72,13 @@ class TestCreateExpense:
         body = payload if payload is not None else self._expense_payload
         return client.post(f'/periods/{pid}/expenses', headers=headers, json=body)
 
-    @pytest.mark.parametrize('role,headers_fixture', [
-        ('admin',   'admin_headers'),
-        ('analyst', 'analyst_headers'),
-    ])
+    @pytest.mark.parametrize(
+        'role,headers_fixture',
+        [
+            ('admin', 'admin_headers'),
+            ('analyst', 'analyst_headers'),
+        ],
+    )
     def test_privileged_users_can_create_expenses(
         self, client: TestClient, request, role: str, headers_fixture: str
     ):
@@ -83,12 +98,17 @@ class TestCreateExpense:
         assert_expense_shape(data)
         assert data['description'] == self._expense_payload['description']
 
-        expense_ids = {e['expense_id'] for e in client.get(
-            f'/periods/{self.period["period_id"]}/expenses', headers=headers
-        ).json()}
+        expense_ids = {
+            e['expense_id']
+            for e in client.get(
+                f'/periods/{self.period["period_id"]}/expenses', headers=headers
+            ).json()
+        }
         assert data['expense_id'] in expense_ids
 
-    def test_viewers_cannot_create_expenses(self, client: TestClient, viewer_headers: dict):
+    def test_viewers_cannot_create_expenses(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: An unprivileged user creates an expense
             Given the user holds the "viewer" role
@@ -110,7 +130,9 @@ class TestCreateExpense:
         resp = self._create(client, analyst_headers)
         assert_bad_request(resp)
 
-    def test_invalid_period_id_returns_422(self, client: TestClient, analyst_headers: dict):
+    def test_invalid_period_id_returns_422(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to an invalid allocation period ID is made
             Then the request is rejected
@@ -119,7 +141,9 @@ class TestCreateExpense:
         resp = self._create(client, analyst_headers, period_id='hello')
         assert_unprocessable(resp)
 
-    def test_missing_period_returns_404(self, client: TestClient, analyst_headers: dict):
+    def test_missing_period_returns_404(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to a non-existent allocation period ID is made
             Then the request is rejected with not found
@@ -127,12 +151,15 @@ class TestCreateExpense:
         resp = self._create(client, analyst_headers, period_id=99999)
         assert_not_found(resp)
 
-    def test_invalid_cost_centre_rejected(self, client: TestClient, analyst_headers: dict):
+    def test_invalid_cost_centre_rejected(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request referencing a non-existent cost_centre_id is rejected
         """
         resp = self._create(
-            client, analyst_headers,
+            client,
+            analyst_headers,
             payload={**self._expense_payload, 'cost_centre_id': 99999},
         )
         assert_bad_request(resp)
@@ -142,7 +169,8 @@ class TestCreateExpense:
         Scenario: Amount must be greater than zero (schema: gt=0)
         """
         resp = self._create(
-            client, analyst_headers,
+            client,
+            analyst_headers,
             payload={**self._expense_payload, 'amount': '0.00'},
         )
         assert_unprocessable(resp)
@@ -152,7 +180,8 @@ class TestCreateExpense:
         Scenario: Negative amounts are rejected (schema: gt=0)
         """
         resp = self._create(
-            client, analyst_headers,
+            client,
+            analyst_headers,
             payload={**self._expense_payload, 'amount': '-50.00'},
         )
         assert_unprocessable(resp)
@@ -162,7 +191,9 @@ class TestListExpenses:
     """Feature: Get all expenses - GET /periods/{period_id}/expenses"""
 
     @pytest.fixture(autouse=True)
-    def seed_state(self, client: TestClient, analyst_headers: dict, admin_headers: dict):
+    def seed_state(
+        self, client: TestClient, analyst_headers: dict, admin_headers: dict
+    ):
         period_resp = client.post(
             '/periods',
             json={'name': 'Expense List Period', 'mode': 'budget', 'fiscal_year': 2027},
@@ -171,7 +202,9 @@ class TestListExpenses:
         assert_created(period_resp)
         self.period = period_resp.json()
 
-        cc_id = client.get('/cost-centres', headers=admin_headers).json()[0]['cost_centre_id']
+        cc_id = client.get('/cost-centres', headers=admin_headers).json()[0][
+            'cost_centre_id'
+        ]
         client.post(
             f'/periods/{self.period["period_id"]}/expenses',
             headers=analyst_headers,
@@ -184,7 +217,9 @@ class TestListExpenses:
             When the user sends a valid allocation period ID
             Then a list of all expenses assigned to that period are returned
         """
-        resp = client.get(f'/periods/{self.period["period_id"]}/expenses', headers=viewer_headers)
+        resp = client.get(
+            f'/periods/{self.period["period_id"]}/expenses', headers=viewer_headers
+        )
         assert_ok(resp)
         data = resp.json()
         assert isinstance(data, list)
@@ -192,7 +227,9 @@ class TestListExpenses:
         for e in data:
             assert_expense_shape(e)
 
-    def test_invalid_period_id_returns_422(self, client: TestClient, viewer_headers: dict):
+    def test_invalid_period_id_returns_422(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: Get a list of expenses with an invalid allocation period ID
             Then the request is rejected
@@ -214,7 +251,9 @@ class TestGetExpense:
     """Feature: Get single expense - GET /periods/{period_id}/expenses/{expense_id}"""
 
     @pytest.fixture(autouse=True)
-    def seed_state(self, client: TestClient, analyst_headers: dict, admin_headers: dict):
+    def seed_state(
+        self, client: TestClient, analyst_headers: dict, admin_headers: dict
+    ):
         period_resp = client.post(
             '/periods',
             json={'name': 'Get Expense Period', 'mode': 'budget', 'fiscal_year': 2027},
@@ -223,7 +262,9 @@ class TestGetExpense:
         assert_created(period_resp)
         self.period = period_resp.json()
 
-        cc_id = client.get('/cost-centres', headers=admin_headers).json()[0]['cost_centre_id']
+        cc_id = client.get('/cost-centres', headers=admin_headers).json()[0][
+            'cost_centre_id'
+        ]
         exp_resp = client.post(
             f'/periods/{self.period["period_id"]}/expenses',
             headers=analyst_headers,
@@ -245,7 +286,9 @@ class TestGetExpense:
         assert_ok(resp)
         assert_expense_shape(resp.json())
 
-    def test_invalid_expense_id_returns_422(self, client: TestClient, viewer_headers: dict):
+    def test_invalid_expense_id_returns_422(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: Get an expense with an invalid expense ID
             Then the request is rejected
@@ -257,7 +300,9 @@ class TestGetExpense:
         )
         assert_unprocessable(resp)
 
-    def test_invalid_period_id_returns_422(self, client: TestClient, viewer_headers: dict):
+    def test_invalid_period_id_returns_422(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: Get an expense with an invalid period ID
             Then the request is rejected
@@ -269,7 +314,9 @@ class TestGetExpense:
         )
         assert_unprocessable(resp)
 
-    def test_missing_expense_returns_404(self, client: TestClient, viewer_headers: dict):
+    def test_missing_expense_returns_404(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: Get a single expense with a valid-format but non-existent expense ID
             Then the request is rejected with not found
@@ -281,7 +328,11 @@ class TestGetExpense:
         assert_not_found(resp)
 
     def test_expense_from_wrong_period_returns_404(
-        self, client: TestClient, analyst_headers: dict, admin_headers: dict, viewer_headers: dict
+        self,
+        client: TestClient,
+        analyst_headers: dict,
+        admin_headers: dict,
+        viewer_headers: dict,
     ):
         """
         Scenario: Get an expense using the correct expense ID but the wrong period ID
@@ -304,20 +355,32 @@ class TestUpdateExpense:
     """Feature: Update an expense - PATCH /periods/{period_id}/expenses/{expense_id}"""
 
     @pytest.fixture(autouse=True)
-    def seed_state(self, client: TestClient, analyst_headers: dict, admin_headers: dict):
+    def seed_state(
+        self, client: TestClient, analyst_headers: dict, admin_headers: dict
+    ):
         period_resp = client.post(
             '/periods',
-            json={'name': 'Update Expense Period', 'mode': 'budget', 'fiscal_year': 2027},
+            json={
+                'name': 'Update Expense Period',
+                'mode': 'budget',
+                'fiscal_year': 2027,
+            },
             headers=analyst_headers,
         )
         assert_created(period_resp)
         self.period = period_resp.json()
 
-        cc_id = client.get('/cost-centres', headers=admin_headers).json()[0]['cost_centre_id']
+        cc_id = client.get('/cost-centres', headers=admin_headers).json()[0][
+            'cost_centre_id'
+        ]
         exp_resp = client.post(
             f'/periods/{self.period["period_id"]}/expenses',
             headers=analyst_headers,
-            json={'cost_centre_id': cc_id, 'description': 'Original', 'amount': '300.00'},
+            json={
+                'cost_centre_id': cc_id,
+                'description': 'Original',
+                'amount': '300.00',
+            },
         )
         assert_created(exp_resp)
         self.expense = exp_resp.json()
@@ -326,12 +389,17 @@ class TestUpdateExpense:
         pid = period_id if period_id is not None else self.period['period_id']
         eid = expense_id if expense_id is not None else self.expense['expense_id']
         body = payload or {'description': 'Updated'}
-        return client.patch(f'/periods/{pid}/expenses/{eid}', headers=headers, json=body)
+        return client.patch(
+            f'/periods/{pid}/expenses/{eid}', headers=headers, json=body
+        )
 
-    @pytest.mark.parametrize('role,headers_fixture', [
-        ('admin',   'admin_headers'),
-        ('analyst', 'analyst_headers'),
-    ])
+    @pytest.mark.parametrize(
+        'role,headers_fixture',
+        [
+            ('admin', 'admin_headers'),
+            ('analyst', 'analyst_headers'),
+        ],
+    )
     def test_privileged_users_can_update_expenses(
         self, client: TestClient, request, role: str, headers_fixture: str
     ):
@@ -344,13 +412,17 @@ class TestUpdateExpense:
             Examples: |admin| |analyst|
         """
         headers = request.getfixturevalue(headers_fixture)
-        resp = self._patch(client, headers, payload={'description': 'Revised', 'amount': '999.00'})
+        resp = self._patch(
+            client, headers, payload={'description': 'Revised', 'amount': '999.00'}
+        )
         assert_ok(resp)
         data = resp.json()
         assert_expense_shape(data)
         assert data['description'] == 'Revised'
 
-    def test_viewers_cannot_update_expenses(self, client: TestClient, viewer_headers: dict):
+    def test_viewers_cannot_update_expenses(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: An unprivileged user updates an expense
             Given the user holds the "viewer" role
@@ -372,7 +444,9 @@ class TestUpdateExpense:
         resp = self._patch(client, analyst_headers)
         assert_bad_request(resp)
 
-    def test_invalid_period_id_returns_422(self, client: TestClient, analyst_headers: dict):
+    def test_invalid_period_id_returns_422(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to an invalid allocation period ID is made
             Then the request is rejected
@@ -381,7 +455,9 @@ class TestUpdateExpense:
         resp = self._patch(client, analyst_headers, period_id='hello')
         assert_unprocessable(resp)
 
-    def test_invalid_expense_id_returns_422(self, client: TestClient, analyst_headers: dict):
+    def test_invalid_expense_id_returns_422(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to an invalid expense ID is made
             Then the request is rejected
@@ -390,7 +466,9 @@ class TestUpdateExpense:
         resp = self._patch(client, analyst_headers, expense_id='hello')
         assert_unprocessable(resp)
 
-    def test_missing_expense_returns_404(self, client: TestClient, analyst_headers: dict):
+    def test_missing_expense_returns_404(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to a non-existent expense ID is made
             Then the request is rejected with not found
@@ -403,20 +481,32 @@ class TestDeleteExpense:
     """Feature: Delete an expense - DELETE /periods/{period_id}/expenses/{expense_id}"""
 
     @pytest.fixture(autouse=True)
-    def seed_state(self, client: TestClient, analyst_headers: dict, admin_headers: dict):
+    def seed_state(
+        self, client: TestClient, analyst_headers: dict, admin_headers: dict
+    ):
         period_resp = client.post(
             '/periods',
-            json={'name': 'Delete Expense Period', 'mode': 'budget', 'fiscal_year': 2027},
+            json={
+                'name': 'Delete Expense Period',
+                'mode': 'budget',
+                'fiscal_year': 2027,
+            },
             headers=analyst_headers,
         )
         assert_created(period_resp)
         self.period = period_resp.json()
 
-        cc_id = client.get('/cost-centres', headers=admin_headers).json()[0]['cost_centre_id']
+        cc_id = client.get('/cost-centres', headers=admin_headers).json()[0][
+            'cost_centre_id'
+        ]
         exp_resp = client.post(
             f'/periods/{self.period["period_id"]}/expenses',
             headers=analyst_headers,
-            json={'cost_centre_id': cc_id, 'description': 'To Delete', 'amount': '50.00'},
+            json={
+                'cost_centre_id': cc_id,
+                'description': 'To Delete',
+                'amount': '50.00',
+            },
         )
         assert_created(exp_resp)
         self.expense = exp_resp.json()
@@ -426,12 +516,20 @@ class TestDeleteExpense:
         eid = expense_id if expense_id is not None else self.expense['expense_id']
         return client.delete(f'/periods/{pid}/expenses/{eid}', headers=headers)
 
-    @pytest.mark.parametrize('role,headers_fixture', [
-        ('admin',   'admin_headers'),
-        ('analyst', 'analyst_headers'),
-    ])
+    @pytest.mark.parametrize(
+        'role,headers_fixture',
+        [
+            ('admin', 'admin_headers'),
+            ('analyst', 'analyst_headers'),
+        ],
+    )
     def test_privileged_users_can_delete_expenses(
-        self, client: TestClient, request, role: str, headers_fixture: str, viewer_headers: dict
+        self,
+        client: TestClient,
+        request,
+        role: str,
+        headers_fixture: str,
+        viewer_headers: dict,
     ):
         """
         Scenario: A privileged user deletes an expense
@@ -450,9 +548,13 @@ class TestDeleteExpense:
             f'/periods/{self.period["period_id"]}/expenses', headers=viewer_headers
         ).json()
         ids = {e['expense_id'] for e in remaining}
-        assert self.expense['expense_id'] not in ids, 'Deleted expense still present in list'
+        assert self.expense['expense_id'] not in ids, (
+            'Deleted expense still present in list'
+        )
 
-    def test_viewers_cannot_delete_expenses(self, client: TestClient, viewer_headers: dict):
+    def test_viewers_cannot_delete_expenses(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: An unprivileged user deletes an expense
             Given the user holds the "viewer" role
@@ -474,7 +576,9 @@ class TestDeleteExpense:
         resp = self._delete(client, analyst_headers)
         assert_bad_request(resp)
 
-    def test_invalid_period_id_returns_422(self, client: TestClient, analyst_headers: dict):
+    def test_invalid_period_id_returns_422(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to an invalid allocation period ID is made
             Then the request is rejected
@@ -482,7 +586,9 @@ class TestDeleteExpense:
         resp = self._delete(client, analyst_headers, period_id='hello')
         assert_unprocessable(resp)
 
-    def test_invalid_expense_id_returns_422(self, client: TestClient, analyst_headers: dict):
+    def test_invalid_expense_id_returns_422(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to an invalid expense ID is made
             Then the request is rejected
@@ -490,7 +596,9 @@ class TestDeleteExpense:
         resp = self._delete(client, analyst_headers, expense_id='hello')
         assert_unprocessable(resp)
 
-    def test_missing_expense_returns_404(self, client: TestClient, analyst_headers: dict):
+    def test_missing_expense_returns_404(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to a non-existent expense ID is made
             Then the request is rejected with not found

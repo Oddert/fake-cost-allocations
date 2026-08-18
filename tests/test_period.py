@@ -24,12 +24,24 @@ from tests.utils.assertions import (
 
 
 def assert_period_shape(data: dict) -> None:
-    required = {'period_id', 'name', 'mode', 'fiscal_year', 'status', 'created_by', 'created_at'}
+    required = {
+        'period_id',
+        'name',
+        'mode',
+        'fiscal_year',
+        'status',
+        'created_by',
+        'created_at',
+    }
     missing = required - data.keys()
     assert not missing, f'Period missing fields: {missing}'
     assert isinstance(data['period_id'], int), 'period_id must be an integer'
-    assert data['mode'] in ('budget', 'actual'), f"mode must be budget or actual, got {data['mode']}"
-    assert data['status'] in ('open', 'locked', 'submitted'), f"unexpected status: {data['status']}"
+    assert data['mode'] in ('budget', 'actual'), (
+        f'mode must be budget or actual, got {data["mode"]}'
+    )
+    assert data['status'] in ('open', 'locked', 'submitted'), (
+        f'unexpected status: {data["status"]}'
+    )
     assert isinstance(data['fiscal_year'], int), 'fiscal_year must be an integer'
 
 
@@ -41,10 +53,13 @@ class TestCreatePeriod:
     def _create(self, client: TestClient, headers: dict, payload: dict):
         return client.post('/periods', headers=headers, json=payload)
 
-    @pytest.mark.parametrize('role,headers_fixture', [
-        ('admin',   'admin_headers'),
-        ('analyst', 'analyst_headers'),
-    ])
+    @pytest.mark.parametrize(
+        'role,headers_fixture',
+        [
+            ('admin', 'admin_headers'),
+            ('analyst', 'analyst_headers'),
+        ],
+    )
     def test_privileged_users_can_create_periods(
         self, client: TestClient, request, role: str, headers_fixture: str
     ):
@@ -65,10 +80,14 @@ class TestCreatePeriod:
         assert data['mode'] == self._PERIOD['mode']
         assert data['status'] == 'open'
 
-        period_ids = {p['period_id'] for p in client.get('/periods', headers=headers).json()}
+        period_ids = {
+            p['period_id'] for p in client.get('/periods', headers=headers).json()
+        }
         assert data['period_id'] in period_ids
 
-    def test_viewers_cannot_create_periods(self, client: TestClient, viewer_headers: dict):
+    def test_viewers_cannot_create_periods(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: Non-analysts cannot create an allocation period
             Given the user does not hold the "admin" or "analyst" role
@@ -82,28 +101,42 @@ class TestCreatePeriod:
         Scenario: Invalid mode value is rejected
             The mode field must be 'budget' or 'actual'.
         """
-        resp = self._create(client, analyst_headers, {**self._PERIOD, 'mode': 'invalid'})
+        resp = self._create(
+            client, analyst_headers, {**self._PERIOD, 'mode': 'invalid'}
+        )
         assert_unprocessable(resp)
 
-    def test_fiscal_year_below_range_rejected(self, client: TestClient, analyst_headers: dict):
+    def test_fiscal_year_below_range_rejected(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: fiscal_year below 2000 is rejected (schema: ge=2000)
         """
-        resp = self._create(client, analyst_headers, {**self._PERIOD, 'fiscal_year': 1999})
+        resp = self._create(
+            client, analyst_headers, {**self._PERIOD, 'fiscal_year': 1999}
+        )
         assert_unprocessable(resp)
 
-    def test_fiscal_year_above_range_rejected(self, client: TestClient, analyst_headers: dict):
+    def test_fiscal_year_above_range_rejected(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: fiscal_year above 2100 is rejected (schema: le=2100)
         """
-        resp = self._create(client, analyst_headers, {**self._PERIOD, 'fiscal_year': 2101})
+        resp = self._create(
+            client, analyst_headers, {**self._PERIOD, 'fiscal_year': 2101}
+        )
         assert_unprocessable(resp)
 
-    def test_fiscal_month_out_of_range_rejected(self, client: TestClient, analyst_headers: dict):
+    def test_fiscal_month_out_of_range_rejected(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: fiscal_month must be 1-12
         """
-        resp = self._create(client, analyst_headers, {**self._PERIOD, 'fiscal_month': 13})
+        resp = self._create(
+            client, analyst_headers, {**self._PERIOD, 'fiscal_month': 13}
+        )
         assert_unprocessable(resp)
 
     def test_fiscal_month_is_optional(self, client: TestClient, analyst_headers: dict):
@@ -122,9 +155,9 @@ class TestListPeriods:
     def seed_periods(self, client: TestClient, analyst_headers: dict):
         """Seed a variety of periods for filter tests."""
         periods = [
-            {'name': 'FY2025 Budget',  'mode': 'budget', 'fiscal_year': 2025},
-            {'name': 'FY2025 Actual',  'mode': 'actual', 'fiscal_year': 2025},
-            {'name': 'FY2026 Budget',  'mode': 'budget', 'fiscal_year': 2026},
+            {'name': 'FY2025 Budget', 'mode': 'budget', 'fiscal_year': 2025},
+            {'name': 'FY2025 Actual', 'mode': 'actual', 'fiscal_year': 2025},
+            {'name': 'FY2026 Budget', 'mode': 'budget', 'fiscal_year': 2026},
         ]
         for p in periods:
             client.post('/periods', headers=analyst_headers, json=p)
@@ -152,9 +185,11 @@ class TestListPeriods:
         resp = client.get('/periods', headers=viewer_headers, params={'mode': 'budget'})
         assert_ok(resp)
         for p in resp.json():
-            assert p['mode'] == 'budget', f"Non-budget period returned: {p}"
+            assert p['mode'] == 'budget', f'Non-budget period returned: {p}'
 
-    def test_filter_by_status(self, client: TestClient, viewer_headers: dict, admin_headers: dict):
+    def test_filter_by_status(
+        self, client: TestClient, viewer_headers: dict, admin_headers: dict
+    ):
         """
         Scenario: Get a list of only specific status
             When the user requests allocation periods with a specific status
@@ -164,11 +199,13 @@ class TestListPeriods:
         first_id = client.get('/periods', headers=viewer_headers).json()[0]['period_id']
         client.post(f'/periods/{first_id}/lock', headers=admin_headers)
 
-        resp = client.get('/periods', headers=viewer_headers, params={'status': 'locked'})
+        resp = client.get(
+            '/periods', headers=viewer_headers, params={'status': 'locked'}
+        )
         assert_ok(resp)
         assert len(resp.json()) >= 1
         for p in resp.json():
-            assert p['status'] == 'locked', f"Non-locked period returned: {p}"
+            assert p['status'] == 'locked', f'Non-locked period returned: {p}'
 
     def test_filter_by_fiscal_year(self, client: TestClient, viewer_headers: dict):
         """
@@ -176,7 +213,9 @@ class TestListPeriods:
             When the user requests allocation periods with a specific fiscal year
             Then all returned periods have that fiscal year value
         """
-        resp = client.get('/periods', headers=viewer_headers, params={'fiscal_year': 2025})
+        resp = client.get(
+            '/periods', headers=viewer_headers, params={'fiscal_year': 2025}
+        )
         assert_ok(resp)
         assert len(resp.json()) >= 1
         for p in resp.json():
@@ -189,7 +228,8 @@ class TestListPeriods:
             Then all returned periods match all filter values
         """
         resp = client.get(
-            '/periods', headers=viewer_headers,
+            '/periods',
+            headers=viewer_headers,
             params={'mode': 'budget', 'fiscal_year': 2026, 'status': 'open'},
         )
         assert_ok(resp)
@@ -205,7 +245,8 @@ class TestGetPeriod:
     @pytest.fixture(autouse=True)
     def seed_period(self, client: TestClient, analyst_headers: dict):
         resp = client.post(
-            '/periods', json={'name': 'Test Period', 'mode': 'budget', 'fiscal_year': 2027},
+            '/periods',
+            json={'name': 'Test Period', 'mode': 'budget', 'fiscal_year': 2027},
             headers=analyst_headers,
         )
         assert_created(resp)
@@ -217,7 +258,9 @@ class TestGetPeriod:
             When the user requests an allocation period by ID
             Then the allocation period details are returned
         """
-        resp = client.get(f'/periods/{self.seeded_period["period_id"]}', headers=viewer_headers)
+        resp = client.get(
+            f'/periods/{self.seeded_period["period_id"]}', headers=viewer_headers
+        )
         assert_ok(resp)
         assert_period_shape(resp.json())
 
@@ -230,7 +273,9 @@ class TestGetPeriod:
         assert_not_found(resp)
 
     @pytest.mark.parametrize('bad_id', ['hello', '"{}"', '    '])
-    def test_invalid_id_returns_422(self, client: TestClient, viewer_headers: dict, bad_id):
+    def test_invalid_id_returns_422(
+        self, client: TestClient, viewer_headers: dict, bad_id
+    ):
         """
         Scenario: Get an allocation period with an invalid ID
             Then the request is rejected
@@ -246,7 +291,8 @@ class TestUpdatePeriod:
     @pytest.fixture(autouse=True)
     def seed_period(self, client: TestClient, analyst_headers: dict):
         resp = client.post(
-            '/periods', json={'name': 'Test Period', 'mode': 'budget', 'fiscal_year': 2027},
+            '/periods',
+            json={'name': 'Test Period', 'mode': 'budget', 'fiscal_year': 2027},
             headers=analyst_headers,
         )
         assert_created(resp)
@@ -255,10 +301,13 @@ class TestUpdatePeriod:
     def _patch(self, client: TestClient, headers: dict, period_id, payload: dict):
         return client.patch(f'/periods/{period_id}', headers=headers, json=payload)
 
-    @pytest.mark.parametrize('role,headers_fixture', [
-        ('admin',   'admin_headers'),
-        ('analyst', 'analyst_headers'),
-    ])
+    @pytest.mark.parametrize(
+        'role,headers_fixture',
+        [
+            ('admin', 'admin_headers'),
+            ('analyst', 'analyst_headers'),
+        ],
+    )
     def test_privileged_users_can_update_period(
         self, client: TestClient, request, role: str, headers_fixture: str
     ):
@@ -271,7 +320,9 @@ class TestUpdatePeriod:
         """
         headers = request.getfixturevalue(headers_fixture)
         resp = self._patch(
-            client, headers, self.seeded_period['period_id'],
+            client,
+            headers,
+            self.seeded_period['period_id'],
             {'name': 'Updated Name', 'fiscal_month': 3},
         )
         assert_ok(resp)
@@ -280,13 +331,17 @@ class TestUpdatePeriod:
         assert data['name'] == 'Updated Name'
         assert data['fiscal_month'] == 3
 
-    def test_viewers_cannot_update_periods(self, client: TestClient, viewer_headers: dict):
+    def test_viewers_cannot_update_periods(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: An unprivileged user updates a period
             Given the user holds the "viewer" role
             Then the request is rejected with an unprivileged error
         """
-        resp = self._patch(client, viewer_headers, self.seeded_period['period_id'], {'name': 'Nope'})
+        resp = self._patch(
+            client, viewer_headers, self.seeded_period['period_id'], {'name': 'Nope'}
+        )
         assert_forbidden(resp)
 
     def test_update_locked_period_rejected(
@@ -298,11 +353,17 @@ class TestUpdatePeriod:
             When the user submits allocation period details for the locked period
             Then the request is rejected
         """
-        client.post(f'/periods/{self.seeded_period["period_id"]}/lock', headers=admin_headers)
-        resp = self._patch(client, analyst_headers, self.seeded_period['period_id'], {'name': 'Locked'})
+        client.post(
+            f'/periods/{self.seeded_period["period_id"]}/lock', headers=admin_headers
+        )
+        resp = self._patch(
+            client, analyst_headers, self.seeded_period['period_id'], {'name': 'Locked'}
+        )
         assert_bad_request(resp)
 
-    def test_update_missing_period_returns_404(self, client: TestClient, analyst_headers: dict):
+    def test_update_missing_period_returns_404(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request for a missing period is rejected
             When the user submits allocation period details to a period which does not exist
@@ -312,7 +373,9 @@ class TestUpdatePeriod:
         assert_not_found(resp)
 
     @pytest.mark.parametrize('bad_id', ['hello', '"{}"', '    '])
-    def test_invalid_id_returns_422(self, client: TestClient, analyst_headers: dict, bad_id):
+    def test_invalid_id_returns_422(
+        self, client: TestClient, analyst_headers: dict, bad_id
+    ):
         """
         Scenario: An invalid ID is used in an update
             Then the request is rejected
@@ -321,7 +384,9 @@ class TestUpdatePeriod:
         resp = self._patch(client, analyst_headers, bad_id, {'name': 'Bad'})
         assert_unprocessable(resp)
 
-    def test_fiscal_year_cannot_be_updated(self, client: TestClient, analyst_headers: dict):
+    def test_fiscal_year_cannot_be_updated(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: fiscal_year is not an updatable field (PeriodUpdate schema does not include it)
             When the user submits a fiscal_year in the patch body
@@ -329,7 +394,9 @@ class TestUpdatePeriod:
         """
         original_year = self.seeded_period['fiscal_year']
         resp = self._patch(
-            client, analyst_headers, self.seeded_period['period_id'],
+            client,
+            analyst_headers,
+            self.seeded_period['period_id'],
             {'name': 'Renamed', 'fiscal_year': 2099},
         )
         assert_ok(resp)
@@ -344,7 +411,8 @@ class TestLockPeriod:
     @pytest.fixture(autouse=True)
     def seed_period(self, client: TestClient, analyst_headers: dict):
         resp = client.post(
-            '/periods', json={'name': 'Lockable Period', 'mode': 'budget', 'fiscal_year': 2027},
+            '/periods',
+            json={'name': 'Lockable Period', 'mode': 'budget', 'fiscal_year': 2027},
             headers=analyst_headers,
         )
         assert_created(resp)
@@ -368,7 +436,9 @@ class TestLockPeriod:
         assert data['status'] == 'locked'
         assert data['locked_at'] is not None
 
-    def test_analyst_cannot_lock_a_period(self, client: TestClient, analyst_headers: dict):
+    def test_analyst_cannot_lock_a_period(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: An unprivileged user locks an allocation period (analyst)
             Then the request is rejected as unprivileged
@@ -376,7 +446,9 @@ class TestLockPeriod:
         resp = self._lock(client, analyst_headers, self.seeded_period['period_id'])
         assert_forbidden(resp)
 
-    def test_viewer_cannot_lock_a_period(self, client: TestClient, viewer_headers: dict):
+    def test_viewer_cannot_lock_a_period(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: An unprivileged user locks an allocation period (viewer)
             Then the request is rejected as unprivileged
@@ -392,17 +464,25 @@ class TestLockPeriod:
             And the allocation period can no longer have costs added to it
         """
         # Seed a cost centre so we can attempt an expense
-        cc_id = client.get('/cost-centres', headers=admin_headers).json()[0]['cost_centre_id']
+        cc_id = client.get('/cost-centres', headers=admin_headers).json()[0][
+            'cost_centre_id'
+        ]
         self._lock(client, admin_headers, self.seeded_period['period_id'])
 
         resp = client.post(
             f'/periods/{self.seeded_period["period_id"]}/expenses',
             headers=analyst_headers,
-            json={'cost_centre_id': cc_id, 'description': 'Should fail', 'amount': '100.00'},
+            json={
+                'cost_centre_id': cc_id,
+                'description': 'Should fail',
+                'amount': '100.00',
+            },
         )
         assert_bad_request(resp)
 
-    def test_lock_missing_period_returns_404(self, client: TestClient, admin_headers: dict):
+    def test_lock_missing_period_returns_404(
+        self, client: TestClient, admin_headers: dict
+    ):
         """
         Scenario: An invalid ID is used to lock a period — non-existent ID
             Then the request is rejected with not found
@@ -411,7 +491,9 @@ class TestLockPeriod:
         assert_not_found(resp)
 
     @pytest.mark.parametrize('bad_id', ['hello', '"{}"', '    '])
-    def test_lock_invalid_id_returns_422(self, client: TestClient, admin_headers: dict, bad_id):
+    def test_lock_invalid_id_returns_422(
+        self, client: TestClient, admin_headers: dict, bad_id
+    ):
         """
         Scenario: An invalid ID is used to lock a period
             Then the request is rejected

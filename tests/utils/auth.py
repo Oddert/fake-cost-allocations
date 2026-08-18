@@ -26,13 +26,13 @@ def get_token(client: TestClient, username: str, password: str) -> str:
     surfaces as a clear test failure rather than a confusing KeyError.
     """
     resp = client.post(
-        "/auth/token",
-        data={"username": username, "password": password},
+        '/auth/token',
+        data={'username': username, 'password': password},
     )
     assert resp.status_code == 200, (
         f"Login failed for user '{username}': HTTP {resp.status_code} — {resp.text}"
     )
-    return resp.json()["access_token"]
+    return resp.json()['access_token']
 
 
 def get_headers(client: TestClient, username: str, password: str) -> dict[str, str]:
@@ -44,7 +44,7 @@ def get_headers(client: TestClient, username: str, password: str) -> dict[str, s
         client.get("/some/endpoint", headers=get_headers(client, "admin", "admin123"))
     """
     token = get_token(client, username, password)
-    return {"Authorization": f"Bearer {token}"}
+    return {'Authorization': f'Bearer {token}'}
 
 
 def get_token_for_role(client: TestClient, role: str) -> str:
@@ -55,9 +55,9 @@ def get_token_for_role(client: TestClient, role: str) -> str:
     Relies on the seed users created by conftest._seed_store().
     """
     _seed_credentials = {
-        "admin":   ("admin",   "admin123"),
-        "analyst": ("analyst", "analyst123"),
-        "viewer":  ("viewer",  "viewer123"),
+        'admin': ('admin', 'admin123'),
+        'analyst': ('analyst', 'analyst123'),
+        'viewer': ('viewer', 'viewer123'),
     }
     if role not in _seed_credentials:
         raise ValueError(
@@ -73,4 +73,4 @@ def get_headers_for_role(client: TestClient, role: str) -> dict[str, str]:
 
     Supported roles: "admin", "analyst", "viewer".
     """
-    return {"Authorization": f"Bearer {get_token_for_role(client, role)}"}
+    return {'Authorization': f'Bearer {get_token_for_role(client, role)}'}

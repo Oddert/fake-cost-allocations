@@ -133,6 +133,7 @@ def assert_user_shape(data: dict) -> None:
 
     assert_no_sensitive_fields(data)
 
+
 def assert_cost_centre_shape(data: dict) -> None:
     """
     Assert a cost centre object has the correct shape and no sensitive fields.

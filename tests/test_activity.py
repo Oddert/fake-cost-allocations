@@ -30,7 +30,9 @@ def assert_activity_shape(data: dict) -> None:
     assert not missing, f'Activity missing fields: {missing}'
     assert isinstance(data['activity_id'], int), 'activity_id must be an integer'
     assert isinstance(data['period_id'], int), 'period_id must be an integer'
-    assert isinstance(data['name'], str) and data['name'], 'name must be a non-empty string'
+    assert isinstance(data['name'], str) and data['name'], (
+        'name must be a non-empty string'
+    )
 
 
 class TestCreateActivity:
@@ -40,7 +42,11 @@ class TestCreateActivity:
     def seed_state(self, client: TestClient, analyst_headers: dict):
         period_resp = client.post(
             '/periods',
-            json={'name': 'Activity Test Period', 'mode': 'budget', 'fiscal_year': 2027},
+            json={
+                'name': 'Activity Test Period',
+                'mode': 'budget',
+                'fiscal_year': 2027,
+            },
             headers=analyst_headers,
         )
         assert_created(period_resp)
@@ -52,10 +58,13 @@ class TestCreateActivity:
         body = payload if payload is not None else self._payload
         return client.post(f'/periods/{pid}/activities', headers=headers, json=body)
 
-    @pytest.mark.parametrize('role,headers_fixture', [
-        ('admin',   'admin_headers'),
-        ('analyst', 'analyst_headers'),
-    ])
+    @pytest.mark.parametrize(
+        'role,headers_fixture',
+        [
+            ('admin', 'admin_headers'),
+            ('analyst', 'analyst_headers'),
+        ],
+    )
     def test_privileged_users_can_create_activities(
         self, client: TestClient, request, role: str, headers_fixture: str
     ):
@@ -76,12 +85,17 @@ class TestCreateActivity:
         assert data['name'] == self._payload['name']
         assert data['period_id'] == self.period['period_id']
 
-        activity_ids = {a['activity_id'] for a in client.get(
-            f'/periods/{self.period["period_id"]}/activities', headers=headers
-        ).json()}
+        activity_ids = {
+            a['activity_id']
+            for a in client.get(
+                f'/periods/{self.period["period_id"]}/activities', headers=headers
+            ).json()
+        }
         assert data['activity_id'] in activity_ids
 
-    def test_viewers_cannot_create_activities(self, client: TestClient, viewer_headers: dict):
+    def test_viewers_cannot_create_activities(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: An unprivileged user creates an activity
             Given the user holds the "viewer" role
@@ -103,7 +117,9 @@ class TestCreateActivity:
         resp = self._create(client, analyst_headers)
         assert_bad_request(resp)
 
-    def test_invalid_period_id_returns_422(self, client: TestClient, analyst_headers: dict):
+    def test_invalid_period_id_returns_422(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to an invalid allocation period ID is made
             Then the request is rejected
@@ -112,7 +128,9 @@ class TestCreateActivity:
         resp = self._create(client, analyst_headers, period_id='hello')
         assert_unprocessable(resp)
 
-    def test_missing_period_returns_404(self, client: TestClient, analyst_headers: dict):
+    def test_missing_period_returns_404(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to a non-existent allocation period ID is made
             Then the request is rejected with not found
@@ -124,7 +142,9 @@ class TestCreateActivity:
         """
         Scenario: An activity can be created without a description
         """
-        resp = self._create(client, analyst_headers, payload={'name': 'No Desc Activity'})
+        resp = self._create(
+            client, analyst_headers, payload={'name': 'No Desc Activity'}
+        )
         assert_created(resp)
         assert resp.json()['description'] is None
 
@@ -143,7 +163,11 @@ class TestListActivities:
     def seed_state(self, client: TestClient, analyst_headers: dict):
         period_resp = client.post(
             '/periods',
-            json={'name': 'List Activity Period', 'mode': 'budget', 'fiscal_year': 2027},
+            json={
+                'name': 'List Activity Period',
+                'mode': 'budget',
+                'fiscal_year': 2027,
+            },
             headers=analyst_headers,
         )
         assert_created(period_resp)
@@ -161,7 +185,9 @@ class TestListActivities:
             When the user sends a valid allocation period ID
             Then a list of all activities assigned to that period are returned
         """
-        resp = client.get(f'/periods/{self.period["period_id"]}/activities', headers=viewer_headers)
+        resp = client.get(
+            f'/periods/{self.period["period_id"]}/activities', headers=viewer_headers
+        )
         assert_ok(resp)
         data = resp.json()
         assert isinstance(data, list)
@@ -169,7 +195,9 @@ class TestListActivities:
         for a in data:
             assert_activity_shape(a)
 
-    def test_invalid_period_id_returns_422(self, client: TestClient, viewer_headers: dict):
+    def test_invalid_period_id_returns_422(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: Get a list of activities with an invalid allocation period ID
             Then the request is rejected
@@ -221,7 +249,9 @@ class TestGetActivity:
         assert_ok(resp)
         assert_activity_shape(resp.json())
 
-    def test_invalid_activity_id_returns_422(self, client: TestClient, viewer_headers: dict):
+    def test_invalid_activity_id_returns_422(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: Get an activity with an invalid activity ID
             Then the request is rejected
@@ -233,7 +263,9 @@ class TestGetActivity:
         )
         assert_unprocessable(resp)
 
-    def test_invalid_period_id_returns_422(self, client: TestClient, viewer_headers: dict):
+    def test_invalid_period_id_returns_422(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: Get an activity with an invalid period ID
             Then the request is rejected
@@ -245,7 +277,9 @@ class TestGetActivity:
         )
         assert_unprocessable(resp)
 
-    def test_missing_activity_returns_404(self, client: TestClient, viewer_headers: dict):
+    def test_missing_activity_returns_404(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: Get a specific activity with a valid-format but non-existent activity ID
             Then the request is rejected with not found
@@ -283,7 +317,11 @@ class TestUpdateActivity:
     def seed_state(self, client: TestClient, analyst_headers: dict):
         period_resp = client.post(
             '/periods',
-            json={'name': 'Update Activity Period', 'mode': 'budget', 'fiscal_year': 2027},
+            json={
+                'name': 'Update Activity Period',
+                'mode': 'budget',
+                'fiscal_year': 2027,
+            },
             headers=analyst_headers,
         )
         assert_created(period_resp)
@@ -301,12 +339,17 @@ class TestUpdateActivity:
         pid = period_id if period_id is not None else self.period['period_id']
         aid = activity_id if activity_id is not None else self.activity['activity_id']
         body = payload or {'name': 'Updated Name'}
-        return client.patch(f'/periods/{pid}/activities/{aid}', headers=headers, json=body)
+        return client.patch(
+            f'/periods/{pid}/activities/{aid}', headers=headers, json=body
+        )
 
-    @pytest.mark.parametrize('role,headers_fixture', [
-        ('admin',   'admin_headers'),
-        ('analyst', 'analyst_headers'),
-    ])
+    @pytest.mark.parametrize(
+        'role,headers_fixture',
+        [
+            ('admin', 'admin_headers'),
+            ('analyst', 'analyst_headers'),
+        ],
+    )
     def test_privileged_users_can_update_activities(
         self, client: TestClient, request, role: str, headers_fixture: str
     ):
@@ -320,7 +363,8 @@ class TestUpdateActivity:
         """
         headers = request.getfixturevalue(headers_fixture)
         resp = self._patch(
-            client, headers,
+            client,
+            headers,
             payload={'name': 'Revised Name', 'description': 'Revised desc'},
         )
         assert_ok(resp)
@@ -329,7 +373,9 @@ class TestUpdateActivity:
         assert data['name'] == 'Revised Name'
         assert data['description'] == 'Revised desc'
 
-    def test_viewers_cannot_update_activities(self, client: TestClient, viewer_headers: dict):
+    def test_viewers_cannot_update_activities(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: An unprivileged user updates an activity
             Given the user holds the "viewer" role
@@ -351,7 +397,9 @@ class TestUpdateActivity:
         resp = self._patch(client, analyst_headers)
         assert_bad_request(resp)
 
-    def test_invalid_period_id_returns_422(self, client: TestClient, analyst_headers: dict):
+    def test_invalid_period_id_returns_422(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to an invalid allocation period ID is made
             Then the request is rejected
@@ -360,7 +408,9 @@ class TestUpdateActivity:
         resp = self._patch(client, analyst_headers, period_id='hello')
         assert_unprocessable(resp)
 
-    def test_invalid_activity_id_returns_422(self, client: TestClient, analyst_headers: dict):
+    def test_invalid_activity_id_returns_422(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to an invalid activity ID is made
             Then the request is rejected
@@ -369,7 +419,9 @@ class TestUpdateActivity:
         resp = self._patch(client, analyst_headers, activity_id='hello')
         assert_unprocessable(resp)
 
-    def test_missing_activity_returns_404(self, client: TestClient, analyst_headers: dict):
+    def test_missing_activity_returns_404(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to a non-existent activity ID is made
             Then the request is rejected with not found
@@ -385,7 +437,11 @@ class TestDeleteActivity:
     def seed_state(self, client: TestClient, analyst_headers: dict):
         period_resp = client.post(
             '/periods',
-            json={'name': 'Delete Activity Period', 'mode': 'budget', 'fiscal_year': 2027},
+            json={
+                'name': 'Delete Activity Period',
+                'mode': 'budget',
+                'fiscal_year': 2027,
+            },
             headers=analyst_headers,
         )
         assert_created(period_resp)
@@ -404,12 +460,20 @@ class TestDeleteActivity:
         aid = activity_id if activity_id is not None else self.activity['activity_id']
         return client.delete(f'/periods/{pid}/activities/{aid}', headers=headers)
 
-    @pytest.mark.parametrize('role,headers_fixture', [
-        ('admin',   'admin_headers'),
-        ('analyst', 'analyst_headers'),
-    ])
+    @pytest.mark.parametrize(
+        'role,headers_fixture',
+        [
+            ('admin', 'admin_headers'),
+            ('analyst', 'analyst_headers'),
+        ],
+    )
     def test_privileged_users_can_delete_activities(
-        self, client: TestClient, request, role: str, headers_fixture: str, viewer_headers: dict
+        self,
+        client: TestClient,
+        request,
+        role: str,
+        headers_fixture: str,
+        viewer_headers: dict,
     ):
         """
         Scenario: A privileged user deletes an activity
@@ -428,9 +492,13 @@ class TestDeleteActivity:
             f'/periods/{self.period["period_id"]}/activities', headers=viewer_headers
         ).json()
         ids = {a['activity_id'] for a in remaining}
-        assert self.activity['activity_id'] not in ids, 'Deleted activity still present in list'
+        assert self.activity['activity_id'] not in ids, (
+            'Deleted activity still present in list'
+        )
 
-    def test_viewers_cannot_delete_activities(self, client: TestClient, viewer_headers: dict):
+    def test_viewers_cannot_delete_activities(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: An unprivileged user deletes an activity
             Given the user holds the "viewer" role
@@ -452,7 +520,9 @@ class TestDeleteActivity:
         resp = self._delete(client, analyst_headers)
         assert_bad_request(resp)
 
-    def test_invalid_period_id_returns_422(self, client: TestClient, analyst_headers: dict):
+    def test_invalid_period_id_returns_422(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to an invalid allocation period ID is made
             Then the request is rejected
@@ -460,7 +530,9 @@ class TestDeleteActivity:
         resp = self._delete(client, analyst_headers, period_id='hello')
         assert_unprocessable(resp)
 
-    def test_invalid_activity_id_returns_422(self, client: TestClient, analyst_headers: dict):
+    def test_invalid_activity_id_returns_422(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to an invalid activity ID is made
             Then the request is rejected
@@ -468,7 +540,9 @@ class TestDeleteActivity:
         resp = self._delete(client, analyst_headers, activity_id='hello')
         assert_unprocessable(resp)
 
-    def test_missing_activity_returns_404(self, client: TestClient, analyst_headers: dict):
+    def test_missing_activity_returns_404(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: A request to a non-existent activity ID is made
             Then the request is rejected with not found

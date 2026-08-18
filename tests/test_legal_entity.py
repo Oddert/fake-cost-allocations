@@ -26,9 +26,15 @@ def assert_legal_entity_shape(data: dict) -> None:
     required = {'legal_entity_id', 'code', 'name', 'is_active'}
     missing = required - data.keys()
     assert not missing, f'LegalEntity missing fields: {missing}'
-    assert isinstance(data['legal_entity_id'], int), 'legal_entity_id must be an integer'
-    assert isinstance(data['code'], str) and data['code'], 'code must be a non-empty string'
-    assert isinstance(data['name'], str) and data['name'], 'name must be a non-empty string'
+    assert isinstance(data['legal_entity_id'], int), (
+        'legal_entity_id must be an integer'
+    )
+    assert isinstance(data['code'], str) and data['code'], (
+        'code must be a non-empty string'
+    )
+    assert isinstance(data['name'], str) and data['name'], (
+        'name must be a non-empty string'
+    )
     assert isinstance(data['is_active'], bool), 'is_active must be a boolean'
     if data.get('country_code') is not None:
         assert isinstance(data['country_code'], str), 'country_code must be a string'
@@ -46,7 +52,9 @@ class TestCreateLegalEntity:
     def _create_le(self, client: TestClient, headers: dict, payload: dict):
         return client.post('/legal-entities', headers=headers, json=payload)
 
-    def test_admins_can_create_legal_entities(self, client: TestClient, admin_headers: dict):
+    def test_admins_can_create_legal_entities(
+        self, client: TestClient, admin_headers: dict
+    ):
         """
         Scenario: Admin users can create a new legal entity
             Given the current user has the "admin" role
@@ -64,10 +72,15 @@ class TestCreateLegalEntity:
         assert data['country_code'] == self._LEGAL_ENTITY['country_code']
         assert data['is_active'] is True
 
-        codes = {le['code'] for le in client.get('/legal-entities', headers=admin_headers).json()}
+        codes = {
+            le['code']
+            for le in client.get('/legal-entities', headers=admin_headers).json()
+        }
         assert self._LEGAL_ENTITY['code'] in codes
 
-    def test_viewers_cannot_create_legal_entities(self, client: TestClient, viewer_headers: dict):
+    def test_viewers_cannot_create_legal_entities(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: Non-admins cannot create a legal entity
             Given the user does not hold the "admin" role (viewer)
@@ -76,7 +89,9 @@ class TestCreateLegalEntity:
         resp = self._create_le(client, viewer_headers, self._LEGAL_ENTITY)
         assert_forbidden(resp)
 
-    def test_analysts_cannot_create_legal_entities(self, client: TestClient, analyst_headers: dict):
+    def test_analysts_cannot_create_legal_entities(
+        self, client: TestClient, analyst_headers: dict
+    ):
         """
         Scenario: Non-admins cannot create a legal entity
             Given the user does not hold the "admin" role (analyst)
@@ -85,7 +100,9 @@ class TestCreateLegalEntity:
         resp = self._create_le(client, analyst_headers, self._LEGAL_ENTITY)
         assert_forbidden(resp)
 
-    def test_duplicate_codes_are_rejected(self, client: TestClient, admin_headers: dict):
+    def test_duplicate_codes_are_rejected(
+        self, client: TestClient, admin_headers: dict
+    ):
         """
         Scenario: Duplicate legal entity codes are rejected
             Given the current user has the "admin" role
@@ -101,7 +118,8 @@ class TestCreateLegalEntity:
         Scenario: code longer than 20 characters is rejected
         """
         resp = self._create_le(
-            client, admin_headers,
+            client,
+            admin_headers,
             {**self._LEGAL_ENTITY, 'code': 'A_CODE_THAT_IS_WAY_TOO_LONG_FOR_THE_FIELD'},
         )
         assert_unprocessable(resp)
@@ -111,7 +129,8 @@ class TestCreateLegalEntity:
         Scenario: country_code longer than 3 characters is rejected
         """
         resp = self._create_le(
-            client, admin_headers,
+            client,
+            admin_headers,
             {**self._LEGAL_ENTITY, 'country_code': 'TOOLONG'},
         )
         assert_unprocessable(resp)
@@ -120,7 +139,9 @@ class TestCreateLegalEntity:
         """
         Scenario: A legal entity can be created without a country_code
         """
-        resp = self._create_le(client, admin_headers, {'code': 'NO001', 'name': 'Acme No Country'})
+        resp = self._create_le(
+            client, admin_headers, {'code': 'NO001', 'name': 'Acme No Country'}
+        )
         assert_created(resp)
         assert resp.json()['country_code'] is None
 
@@ -128,7 +149,9 @@ class TestCreateLegalEntity:
 class TestListLegalEntities:
     """Feature: Get a list of all legal entities - GET /legal-entities"""
 
-    def test_returns_list_of_legal_entities(self, client: TestClient, viewer_headers: dict):
+    def test_returns_list_of_legal_entities(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: returns a list of all held legal entities
             When the user requests legal entities
@@ -148,14 +171,20 @@ class TestListLegalEntities:
             When the user requests legal entities with active_only=True
             Then only active legal entities are returned
         """
-        le_id = client.get('/legal-entities', headers=admin_headers).json()[0]['legal_entity_id']
-        client.patch(f'/legal-entities/{le_id}', headers=admin_headers, json={'is_active': False})
+        le_id = client.get('/legal-entities', headers=admin_headers).json()[0][
+            'legal_entity_id'
+        ]
+        client.patch(
+            f'/legal-entities/{le_id}', headers=admin_headers, json={'is_active': False}
+        )
 
-        resp = client.get('/legal-entities', headers=viewer_headers, params={'active_only': True})
+        resp = client.get(
+            '/legal-entities', headers=viewer_headers, params={'active_only': True}
+        )
         assert_ok(resp)
         for le in resp.json():
             assert le['is_active'] is True, (
-                f"Inactive entity {le['code']} returned when active_only=True"
+                f'Inactive entity {le["code"]} returned when active_only=True'
             )
 
     def test_all_returned_when_active_only_false(
@@ -164,13 +193,21 @@ class TestListLegalEntities:
         """
         Scenario: Returns all legal entities including inactive when active_only=False
         """
-        le_id = client.get('/legal-entities', headers=admin_headers).json()[0]['legal_entity_id']
-        client.patch(f'/legal-entities/{le_id}', headers=admin_headers, json={'is_active': False})
+        le_id = client.get('/legal-entities', headers=admin_headers).json()[0][
+            'legal_entity_id'
+        ]
+        client.patch(
+            f'/legal-entities/{le_id}', headers=admin_headers, json={'is_active': False}
+        )
 
-        resp = client.get('/legal-entities', headers=admin_headers, params={'active_only': False})
+        resp = client.get(
+            '/legal-entities', headers=admin_headers, params={'active_only': False}
+        )
         assert_ok(resp)
         statuses = {le['is_active'] for le in resp.json()}
-        assert False in statuses, 'Expected at least one inactive entity when active_only=False'
+        assert False in statuses, (
+            'Expected at least one inactive entity when active_only=False'
+        )
 
 
 class TestGetLegalEntity:
@@ -180,7 +217,9 @@ class TestGetLegalEntity:
 
     @pytest.fixture(autouse=True)
     def seed_legal_entity(self, client: TestClient, admin_headers: dict):
-        resp = client.post('/legal-entities', json=self._LEGAL_ENTITY, headers=admin_headers)
+        resp = client.post(
+            '/legal-entities', json=self._LEGAL_ENTITY, headers=admin_headers
+        )
         assert_created(resp)
         self.seeded_le = resp.json()
 
@@ -190,12 +229,17 @@ class TestGetLegalEntity:
             When the user requests a legal entity by ID
             Then the legal entity details are returned
         """
-        resp = client.get(f'/legal-entities/{self.seeded_le["legal_entity_id"]}', headers=viewer_headers)
+        resp = client.get(
+            f'/legal-entities/{self.seeded_le["legal_entity_id"]}',
+            headers=viewer_headers,
+        )
         assert_ok(resp)
         assert_legal_entity_shape(resp.json())
         assert resp.json()['code'] == self._LEGAL_ENTITY['code']
 
-    def test_missing_legal_entity_returns_404(self, client: TestClient, viewer_headers: dict):
+    def test_missing_legal_entity_returns_404(
+        self, client: TestClient, viewer_headers: dict
+    ):
         """
         Scenario: Get a legal entity with a valid-format but non-existent ID
             Then the request is rejected with a not found response
@@ -204,7 +248,9 @@ class TestGetLegalEntity:
         assert_not_found(resp)
 
     @pytest.mark.parametrize('bad_id', ['hello', '"{}"', '    '])
-    def test_invalid_id_returns_422(self, client: TestClient, viewer_headers: dict, bad_id):
+    def test_invalid_id_returns_422(
+        self, client: TestClient, viewer_headers: dict, bad_id
+    ):
         """
         Scenario: Get a legal entity with an invalid ID
             Then the request is rejected
@@ -221,7 +267,9 @@ class TestUpdateLegalEntity:
 
     @pytest.fixture(autouse=True)
     def seed_legal_entity(self, client: TestClient, admin_headers: dict):
-        resp = client.post('/legal-entities', json=self._LEGAL_ENTITY, headers=admin_headers)
+        resp = client.post(
+            '/legal-entities', json=self._LEGAL_ENTITY, headers=admin_headers
+        )
         assert_created(resp)
         self.seeded_le = resp.json()
 
@@ -238,7 +286,9 @@ class TestUpdateLegalEntity:
             Then the legal entity is updated and the updated legal entity is returned
         """
         resp = self._patch(
-            client, admin_headers, self.seeded_le['legal_entity_id'],
+            client,
+            admin_headers,
+            self.seeded_le['legal_entity_id'],
             {'name': 'Acme France Revised', 'country_code': 'FRA', 'is_active': False},
         )
         assert_ok(resp)
@@ -254,7 +304,9 @@ class TestUpdateLegalEntity:
         Scenario: An unprivileged user (analyst) updates a legal entity
             Then the request is rejected with an unprivileged error
         """
-        resp = self._patch(client, analyst_headers, self.seeded_le['legal_entity_id'], {'name': 'Nope'})
+        resp = self._patch(
+            client, analyst_headers, self.seeded_le['legal_entity_id'], {'name': 'Nope'}
+        )
         assert_forbidden(resp)
 
     def test_viewers_cannot_update_legal_entities(
@@ -264,10 +316,14 @@ class TestUpdateLegalEntity:
         Scenario: An unprivileged user (viewer) updates a legal entity
             Then the request is rejected with an unprivileged error
         """
-        resp = self._patch(client, viewer_headers, self.seeded_le['legal_entity_id'], {'name': 'Nope'})
+        resp = self._patch(
+            client, viewer_headers, self.seeded_le['legal_entity_id'], {'name': 'Nope'}
+        )
         assert_forbidden(resp)
 
-    def test_update_missing_id_returns_404(self, client: TestClient, admin_headers: dict):
+    def test_update_missing_id_returns_404(
+        self, client: TestClient, admin_headers: dict
+    ):
         """
         Scenario: An invalid ID is used in an update — non-existent entity
             Then the request is rejected with not found
@@ -276,7 +332,9 @@ class TestUpdateLegalEntity:
         assert_not_found(resp)
 
     @pytest.mark.parametrize('bad_id', ['hello', '"{}"', '    '])
-    def test_invalid_id_returns_422(self, client: TestClient, admin_headers: dict, bad_id):
+    def test_invalid_id_returns_422(
+        self, client: TestClient, admin_headers: dict, bad_id
+    ):
         """
         Scenario: An invalid ID is used in an update
             Then the request is rejected

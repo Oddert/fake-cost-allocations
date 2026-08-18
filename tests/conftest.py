@@ -75,6 +75,7 @@ SEED_LEGAL_ENTITIES = [
     {'code': 'DE001', 'name': 'Acme Germany GmbH', 'country_code': 'DEU'},
 ]
 
+
 def _clear_store() -> None:
     """Wipe every table and reset all sequences to 0."""
     db.users.clear()
@@ -138,6 +139,7 @@ def _seed_store() -> None:
             'is_active': True,
         }
 
+
 @pytest.fixture()
 def client() -> TestClient:
     """
@@ -151,6 +153,7 @@ def client() -> TestClient:
     with TestClient(app, raise_server_exceptions=True) as c:
         yield c
     _clear_store()
+
 
 @pytest.fixture()
 def admin_token(client: TestClient) -> str:
@@ -168,6 +171,7 @@ def analyst_token(client: TestClient) -> str:
 def viewer_token(client: TestClient) -> str:
     """Bearer token for the seeded viewer user."""
     return _acquire_token(client, 'viewer', 'viewer123')
+
 
 @pytest.fixture()
 def admin_user(client: TestClient):
@@ -197,6 +201,7 @@ def _acquire_token(client: TestClient, username: str, password: str) -> str:
         f"Token acquisition failed for '{username}': {resp.status_code} {resp.text}"
     )
     return resp.json()['access_token']
+
 
 def _get_user(client: TestClient, username: str):
     """POST to /auth/token and return the raw access_token string."""
