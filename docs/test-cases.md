@@ -256,6 +256,7 @@ Feature: List users
         Then the list is returned without any sensitive information
 
 Feature: Create new user
+
     Background:
         Given a user exists in the database
         And the user is not deactivated
@@ -335,6 +336,7 @@ Feature: get user details
         Then they do not receive any private data (e.g. password)
 
 Feature: Deactivating a user
+
     Background:
         Given one admin user exists
         And the admin user is not deactivated
@@ -362,6 +364,7 @@ Feature: Deactivating a user
         And the deactivated user details can no longer login
 
 Feature: change password
+
     Background:
         Given a user exists in the database
         And the user is not deactivated
@@ -379,6 +382,7 @@ Feature: change password
         Then the request is rejected
 
 Feature: Creating a new cost centre
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in
@@ -407,6 +411,7 @@ Feature: Creating a new cost centre
         Then the request is rejected as a unprocessable
 
 Feature: Get a list of all cost centres
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -423,6 +428,7 @@ Feature: Get a list of all cost centres
         And they are all active
 
 Feature: Get single cost centre by id
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -450,6 +456,7 @@ Feature: Get single cost centre by id
             |'{}'|
 
 Feature: Update a cost centre
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -488,6 +495,7 @@ Feature: Update a cost centre
         Then the request is rejected as unprocessable
 
 Feature: Creating a new legal entity
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in
@@ -520,6 +528,7 @@ Feature: Get a list of all legal entities
         Then a list of all legal entities is returned
 
 Feature: Get single legal entity by ID
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -541,6 +550,7 @@ Feature: Get single legal entity by ID
             |'{}'|
 
 Feature: Update a legal entity
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -564,6 +574,7 @@ Feature: Update a legal entity
             |'{}'|
 
 Feature: Creating a new allocation period
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in
@@ -596,6 +607,7 @@ Feature: Creating a new allocation period
             |analyst|
 
 Feature: Get a list of all allocation periods
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -633,6 +645,7 @@ Feature: Get a list of all allocation periods
         And all the allocations have the same fiscal year, mode and status values
 
 Feature: Get single allocation period by ID
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -653,6 +666,7 @@ Feature: Get single allocation period by ID
             |'{}'|
 
 Feature: Update an allocation period
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -695,6 +709,7 @@ Feature: Update an allocation period
             |analyst|
 
 Feature: lock a period
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -734,6 +749,7 @@ Feature: lock a period
         And the user is notified that no action was taken
 
 Feature: Create an expense
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -779,6 +795,7 @@ Feature: Create an expense
             |analyst|
 
 Feature: get all expenses
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -800,6 +817,7 @@ Feature: get all expenses
             |'{}'|
 
 Feature: get single expense
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -831,6 +849,7 @@ Feature: get single expense
             |'{}'|
 
 Feature: Update an expense
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -887,6 +906,7 @@ Feature: Update an expense
             |analyst|
 
 Feature: Delete an expense
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -943,6 +963,7 @@ Feature: Delete an expense
             |analyst|
 
 Feature: Create an activity
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -988,6 +1009,7 @@ Feature: Create an activity
             |analyst|
 
 Feature: Get all activities
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -1009,6 +1031,7 @@ Feature: Get all activities
             |'{}'|
 
 Feature: Get a single activity by ID
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -1040,6 +1063,7 @@ Feature: Get a single activity by ID
             |'{}'|
 
 Feature: Update an activity
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
@@ -1096,6 +1120,7 @@ Feature: Update an activity
             |analyst|
 
 Feature: Delete an activity
+
     Background:
         Given a user exists in the database
         And the requesting user is logged in as this user
