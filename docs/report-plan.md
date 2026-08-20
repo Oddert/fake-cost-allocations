@@ -5,72 +5,65 @@
     - prove prod readiness or create adaptation plan
     - ROI good?
     - explore vibe coding as process
-    - provide a regression baseline to ensure further changes are done safely and not in conflict
+    - provide a regression baseline to ensure further changes are done safely and not in conflict (SDLC)
       - early detection of defects
     - create and verify against a software requirements specification SRS
   - Implications
     - security (auth)
     - regulatory
+    - compliance
+    - usability
     - conformity
-    - integration
-
-- Quality Assurance
-  - focus
     - technical debt
     - sneaky vulnerabilities
-    - compliance
-    - security
-    - usability
+    - integration
+      - with systems
+      - with Agile / devops
+      - as scaleability; design must be as a data flow system (DIA p504)
+
+- Quality Assurance & Testing Strategy
   - verification & validation definitions
+    - verification: ensure functionality on terms presented
+      - test requirements on their own terms
+      - trade off with auto tests
+      - blind trust (DIA p530)
+      - Whaat You See Is What You Test
+      - gherkin syntax
+        - readability
+        - mapped to requirements
+        - vauge
+    - validation: critique data handling, compliance, static requirements
+      - derive requirements from observations
+      - challenge these requirements
+      - apply standards and static analysis
   - scope
     - what's in scope
     - drawbacks of what's not in scope
-  - activities
-    - creation of test plan
-    - execution of test plan
-    - defect recording & triage matrix
-    - Adoption recommendation
-    - Further Work & Creation of a Maintenance Plan
-    - ...more?
   - scenarios & SRS mapping
-
-- Strategy
-  - derive requirements from observations
-  - test requirements on their own terms
-  - challenge these requirements
-  - apply standards and static analysis
-  - unable to perform the following due to no users yet:
-    - performance
-    - load
-    - stress
-    - uat
-    - monitored, semi monitored, remote
-    - usability
-    - beta
-    - a-b
-    - proper pen testing
-  - trade off with auto tests
+    - coverage to find features not a measure of success
   - retesting & follow-up after go decision
+    - mocks and services to eventually be used but for now lets be mindful of whats needed to get there
     - agile integration
     - regression tests
-  - gherkin syntax
-    - readability
-    - mapped to requirements
-    - vauge
-  - coverage to find features not a measure of success
-  - mocks and services to eventually be used but for now lets be mindful of whats needed to get there
 
 - Test Plan
+  - roles & responsibilities
   - scoring system
     - rationale of not wanting to focus only on criticality but also quantity
     - work units using fibonacci score
   - tests used
-    - functional tests against observed functionality
+    - functional tests (against observed functionality)
+      - use of automated tests
+        - justified for repeatability, regression (fit to agile)
+        - drawbacks are: long run time, no real DB, no validation, bias towards auto tests (Rafi et al., 2012)
       - gray box technique to index endpoint features & create auto unit / integration tests
       - tests then adapted to include imposed requirements (compliance)
       - Bruno tests generated from OpenAPI.json for manual test portion
-    - Regression test mindset for Continual QA
-    - xFails used to avoid blocking
+    - Regression test
+      - continual review is needed for complience
+      - unit tests with pytest {JUSTIFY}
+      - mindset for Continual QA
+      - xFails used to avoid blocking
     - non-functional (static)
       - manual standards control through white-box observation
       - linting requirement for contribution standards compliance
@@ -84,6 +77,9 @@
     - future focused (white-box, gray-box)
     - pen testing
   - future desired tests
+    - abstraction vs decoupling (cite)
+    - Maintenance testing
+    - continual pen testing with CI/CD
     - integration
       - full system integration
       - performance, load, stress
@@ -93,23 +89,37 @@
       - unmoderated
       - comparative (post GO)
       - accessibility + e2e (no front end)
+    - UAT
+      - a-b
+      - beta (with core team)
+        - monitored, semi monitored, remote
+    - performance
+      - soak test
+      - chaos test
+      - stress test
+        - load not relevant
     - business process integration
-  - roles & responsibilities
   - outcome
 
-- Results
-  - defect summary
+- Test Results
+  - defect summary {EXAMPLES FOR ALL, SCREENSHOTS}
     - no orm, bad DB abstraction
     - security configuration & secrets details badly handled
     - bad exception handling logic
     - no records being kept of any transactions or interactions which is the whole point
     - bad code abstraction
     - documentation is poor
+      - poor comment quality
+      - no actual docs
+      - missing openapi fields
     - RBAC is hierarchical
+    - dependency issues
+  - challenge of auditability
+    - transactions with multi-changes are difficult to record the "why", applies to CA (DIA p531)
+    - confuses triage because a bolt-on solution might not be enough. design is needed
   - triage
     - redesign of the data model around traceability
     - alteration of the RBAC logic
-    - 
   - proposed adaptation plan
 
 - Assessment
@@ -127,8 +137,23 @@
     - deriving requirements assuming each part works short-circuits SDLC
   - **SDLC / design in reverse**: none of the usual user-driven development activities undertaken, only assumptions made by author and LLM.
     - intentionality is missing
+    - cite papanek again
+    - possibly a lock put tag out system
   - **Ship of Theseus**
     - by the time we're done nothing of the original will remain
   - Is this politics?
     - what is the motivation of using an LLM?
     - to say that it was LLM?
+
+## Work-in
+  
+- Critically appraise the QA measures suggested for the API
+- defend tool choice
+
+## Find cite
+
+- hidden vulnerabilities; blind spots
+- necessity of configparser
+- JWT secret key (is a secret (allegedly))
+- good exception handling
+- deparation to prove llm usefullness
